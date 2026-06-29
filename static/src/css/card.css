@@ -1,0 +1,72 @@
+/* Public digital business card page (/card/<slug>). */
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #f3f4f6;
+    color: #1f2937;
+}
+
+.dbc-card {
+    max-width: 420px;
+    margin: 48px auto;
+    padding: 32px 28px;
+    background: #ffffff;
+    border-radius: 18px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    text-align: center;
+}
+
+.dbc-photo {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 50%;
+    margin-bottom: 16px;
+}
+
+.dbc-name {
+    margin: 0;
+    font-size: 1.6rem;
+}
+
+.dbc-role {
+    margin: 4px 0 12px;
+    color: #6b7280;
+}
+
+.dbc-bio {
+    margin: 0 0 20px;
+    line-height: 1.5;
+}
+
+.dbc-contacts {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 24px;
+}
+
+.dbc-link {
+    display: block;
+    padding: 12px;
+    border-radius: 10px;
+    background: #111827;
+    color: #ffffff;
+    text-decoration: none;
+    transition: opacity 0.15s ease;
+}
+
+.dbc-link:hover {
+    opacity: 0.85;
+}
+
+.dbc-qr img {
+    width: 180px;
+    height: 180px;
+}
+
+.dbc-qr small {
+    display: block;
+    margin-top: 6px;
+    color: #9ca3af;
+}

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Public, no-login card page served at /card/<slug>. -->
+    <template id="card_public_page" name="Digital Business Card">&lt;!DOCTYPE html&gt;
+        <html>
+            <head>
+                <meta charset="utf-8"/>
+                <meta name="viewport" content="width=device-width, initial-scale=1"/>
+                <title t-out="card.name"/>
+                <link rel="stylesheet" type="text/css"
+                      href="/digital_business_card/static/src/css/card.css"/>
+            </head>
+            <body>
+                <t t-if="card.source_html">
+                    <!-- Card built from imported HTML: render exactly as given. -->
+                    <t t-out="card.source_html"/>
+                </t>
+                <t t-else="">
+                    <div class="dbc-card">
+                        <img t-if="card.photo" class="dbc-photo"
+                             t-attf-src="/web/image/digital.business.card/#{card.id}/photo"/>
+                        <h1 class="dbc-name" t-out="card.name"/>
+                        <p class="dbc-role">
+                            <t t-out="card.job_title"/>
+                            <t t-if="card.job_title and card.company"> · </t>
+                            <t t-out="card.company"/>
+                        </p>
+                        <p t-if="card.bio" class="dbc-bio" t-out="card.bio"/>
+
+                        <div class="dbc-contacts">
+                            <a t-if="card.email" t-attf-href="mailto:#{card.email}"
+                               class="dbc-link">✉ <t t-out="card.email"/></a>
+                            <a t-if="card.phone" t-attf-href="tel:#{card.phone}"
+                               class="dbc-link">☎ <t t-out="card.phone"/></a>
+                            <a t-if="card.website_url" t-att-href="card.website_url"
+                               class="dbc-link" target="_blank" rel="noopener noreferrer">
+                               🌐 <t t-out="card.website"/></a>
+                        </div>
+
+                        <div class="dbc-qr">
+                            <img t-attf-src="/web/image/digital.business.card/#{card.id}/qr_code"
+                                 alt="QR code"/>
+                            <small>Scan to open this card</small>
+                        </div>
+                    </div>
+                </t>
+            </body>
+        </html>
+    </template>
+
+</odoo>

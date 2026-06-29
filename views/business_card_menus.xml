@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem id="menu_dbc_root"
+              name="Business Cards"
+              sequence="90"/>
+
+    <menuitem id="menu_dbc_cards"
+              name="Cards"
+              parent="menu_dbc_root"
+              action="action_dbc"
+              sequence="10"/>
+
+    <!-- Data sources hold server credentials, so admins only. -->
+    <menuitem id="menu_dbc_sources"
+              name="Data Sources"
+              parent="menu_dbc_root"
+              action="action_dbc_source"
+              groups="base.group_system"
+              sequence="20"/>
+
+    <!-- Publish targets hold upload credentials, so admins only. -->
+    <menuitem id="menu_dbc_targets"
+              name="Publish Targets"
+              parent="menu_dbc_root"
+              action="action_dbc_target"
+              groups="base.group_system"
+              sequence="30"/>
+
+</odoo>
