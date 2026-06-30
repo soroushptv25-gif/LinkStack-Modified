@@ -126,6 +126,10 @@ re-rendered each time it's displayed.
 NFC tag / business card**. Opening it shows only the standalone public card
 page — visitors never reach the Odoo backend or any logged-in area from it.
 
+The public page has an **Import to contact** button that downloads the person as
+a **vCard (.vcf)**, so a viewer can save it straight into their phone contacts
+(available at `/card/<slug>/vcard`).
+
 ---
 
 ## Linking to Employees (HR)

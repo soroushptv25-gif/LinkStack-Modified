@@ -190,6 +190,56 @@ class DigitalBusinessCard(models.Model):
         return cards
 
     # ------------------------------------------------------------------
+    # vCard (.vcf) — lets a card viewer save the contact to their phone.
+    # ------------------------------------------------------------------
+    def _build_vcard(self):
+        """Return this card as a vCard 3.0 string (with the photo if any)."""
+        self.ensure_one()
+
+        def esc(value):
+            return (str(value or '')
+                    .replace('\\', '\\\\').replace('\n', '\\n')
+                    .replace(',', '\\,').replace(';', '\\;'))
+
+        name = self.contact_name or self.name or self.slug or 'Contact'
+        lines = ['BEGIN:VCARD', 'VERSION:3.0',
+                 'N:%s;;;;' % esc(name), 'FN:%s' % esc(name)]
+        if self.contact_company:
+            lines.append('ORG:%s' % esc(self.contact_company))
+        if self.contact_job_title:
+            lines.append('TITLE:%s' % esc(self.contact_job_title))
+        if self.contact_email:
+            lines.append('EMAIL;TYPE=INTERNET:%s' % esc(self.contact_email))
+        if self.contact_phone:
+            lines.append('TEL;TYPE=CELL:%s' % esc(self.contact_phone))
+        if self.website_url:
+            lines.append('URL:%s' % esc(self.website_url))
+        if self.public_url:
+            lines.append('URL:%s' % esc(self.public_url))
+        if self.contact_image:
+            try:
+                raw = base64.b64decode(self.contact_image)
+                ptype = 'PNG' if raw[:4] == b'\x89PNG' else (
+                    'JPEG' if raw[:3] == b'\xff\xd8\xff' else None)
+                if ptype:
+                    b64 = self.contact_image.decode() if isinstance(
+                        self.contact_image, bytes) else self.contact_image
+                    lines.append('PHOTO;ENCODING=b;TYPE=%s:%s' % (ptype, b64))
+            except Exception:
+                pass
+        lines.append('END:VCARD')
+
+        # Fold lines longer than 75 chars (RFC 6350): continuation starts with
+        # a single space. Mainly matters for the base64 photo.
+        folded = []
+        for line in lines:
+            while len(line) > 75:
+                folded.append(line[:75])
+                line = ' ' + line[75:]
+            folded.append(line)
+        return '\r\n'.join(folded) + '\r\n'
+
+    # ------------------------------------------------------------------
     # Dormant: HTML -> card importer.
     #
     # Reads an HTML file (e.g. an exported LinkStack/Linktree card or any
