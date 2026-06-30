@@ -84,10 +84,10 @@ class DigitalBusinessCard(models.Model):
     published_url = fields.Char(string='Hosted URL', readonly=True, copy=False,
                                 help="Where the 3rd-party host published this card, if it returned one.")
 
-    _unique_slug = models.Constraint(
-        'unique(slug)',
-        "That card link is already taken — please choose another one.",
-    )
+    _sql_constraints = [
+        ('unique_slug', 'unique(slug)',
+         "That card link is already taken — please choose another one."),
+    ]
 
     @api.depends('slug')
     def _compute_public_url(self):
@@ -102,24 +102,21 @@ class DigitalBusinessCard(models.Model):
                  'employee_id.work_phone', 'employee_id.mobile_phone',
                  'employee_id.image_1920')
     def _compute_contact(self):
+        # Override model: a value entered on the card wins; when left blank, the
+        # linked employee's live value is used. So mail/phone/position can be
+        # edited per card, while still defaulting to HR data.
         for card in self:
             emp = card.employee_id.sudo() if card.employee_id else False
-            if emp:
-                card.contact_name = emp.name or card.name
-                card.contact_job_title = emp.job_title or (emp.job_id.name or False)
-                card.contact_company = emp.company_id.name or False
-                card.contact_email = emp.work_email or False
-                card.contact_phone = emp.work_phone or emp.mobile_phone or False
-                card.contact_website = emp.company_id.website or False
-                card.contact_image = emp.image_1920 or False
-            else:
-                card.contact_name = card.name
-                card.contact_job_title = card.job_title
-                card.contact_company = card.company
-                card.contact_email = card.email
-                card.contact_phone = card.phone
-                card.contact_website = card.website
-                card.contact_image = card.photo
+            emp_title = (emp.job_title or (emp.job_id.name or False)) if emp else False
+            card.contact_name = card.name or (emp.name if emp else False)
+            card.contact_job_title = card.job_title or emp_title
+            card.contact_company = card.company or (emp.company_id.name if emp else False)
+            card.contact_email = card.email or (emp.work_email if emp else False)
+            card.contact_phone = card.phone or (
+                (emp.work_phone or emp.mobile_phone) if emp else False)
+            card.contact_website = card.website or (
+                emp.company_id.website if emp else False)
+            card.contact_image = card.photo or (emp.image_1920 if emp else False)
 
     @api.depends('contact_website')
     def _compute_website_url(self):

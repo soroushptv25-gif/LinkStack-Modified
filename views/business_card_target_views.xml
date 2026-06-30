@@ -6,12 +6,12 @@
         <field name="name">digital.business.card.target.list</field>
         <field name="model">digital.business.card.target</field>
         <field name="arch" type="xml">
-            <list string="Publish Targets">
+            <tree string="Publish Targets">
                 <field name="name"/>
                 <field name="url"/>
                 <field name="http_method"/>
                 <field name="payload_format"/>
-            </list>
+            </tree>
         </field>
     </record>
 
@@ -45,7 +45,7 @@
     <record id="action_dbc_target" model="ir.actions.act_window">
         <field name="name">Publish Targets</field>
         <field name="res_model">digital.business.card.target</field>
-        <field name="view_mode">list,form</field>
+        <field name="view_mode">tree,form</field>
     </record>
 
     <!-- ============ Publish wizard ============ -->
@@ -59,11 +59,11 @@
                 </group>
                 <separator string="Cards to publish"/>
                 <field name="card_ids">
-                    <list>
+                    <tree>
                         <field name="name"/>
                         <field name="slug"/>
                         <field name="last_published"/>
-                    </list>
+                    </tree>
                 </field>
                 <footer>
                     <button name="action_publish" type="object"
@@ -81,7 +81,7 @@
         <field name="view_mode">form</field>
         <field name="target">new</field>
         <field name="binding_model_id" ref="model_digital_business_card"/>
-        <field name="binding_view_types">list,form</field>
+        <field name="binding_view_types">tree,form</field>
     </record>
 
 </odoo>

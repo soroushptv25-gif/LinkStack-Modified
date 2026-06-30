@@ -1,4 +1,4 @@
-# Digital Business Card (Odoo 19 module)
+# Digital Business Card (Odoo 17 module)
 
 A native **Odoo** module for shareable **digital business cards** — the "link in
 bio" / digital card idea popularised by [LinkStack](https://github.com/LinkStackOrg/LinkStack).
@@ -64,7 +64,7 @@ docker compose run --rm odoo odoo -d learn -u digital_business_card --stop-after
 docker compose start odoo
 ```
 
-**Requirements:** Odoo 19, depends on `base`, `web` and `hr` (the Employees
+**Requirements:** Odoo 17, depends on `base`, `web` and `hr` (the Employees
 app — installed automatically). QR generation uses
 Odoo's built-in barcode engine; PostgreSQL import uses `psycopg2` and HTTP uses
 `requests` — both already ship with Odoo, so there is nothing extra to install.
@@ -166,10 +166,14 @@ and update automatically:
 | Photo | `image_1920` |
 | Website | the employee's company website |
 
-If **no** employee is linked, the card uses its own manually-entered fields
-instead. The employee is read internally with elevated rights, so a public
-visitor with no HR access still sees the published contact details — that's the
-whole point: **outsiders see the contact card, not the employee record.**
+**Editable per card:** every field (position/title, email, phone, company,
+website, photo) can be edited on the card. A value entered there **overrides**
+the employee's; leave it blank to use the employee's live value. If **no**
+employee is linked, the card simply uses its own fields.
+
+The employee is read internally with elevated rights, so a public visitor with
+no HR access still sees the published contact details — that's the whole point:
+**outsiders see the contact card, not the employee record.**
 
 ---
 
