@@ -18,24 +18,24 @@
                 </t>
                 <t t-else="">
                     <div class="dbc-card">
-                        <img t-if="card.photo" class="dbc-photo"
-                             t-attf-src="/web/image/digital.business.card/#{card.id}/photo"/>
-                        <h1 class="dbc-name" t-out="card.name"/>
+                        <img t-if="card.contact_image" class="dbc-photo"
+                             t-attf-src="/web/image/digital.business.card/#{card.id}/contact_image"/>
+                        <h1 class="dbc-name" t-out="card.contact_name"/>
                         <p class="dbc-role">
-                            <t t-out="card.job_title"/>
-                            <t t-if="card.job_title and card.company"> · </t>
-                            <t t-out="card.company"/>
+                            <t t-out="card.contact_job_title"/>
+                            <t t-if="card.contact_job_title and card.contact_company"> · </t>
+                            <t t-out="card.contact_company"/>
                         </p>
                         <p t-if="card.bio" class="dbc-bio" t-out="card.bio"/>
 
                         <div class="dbc-contacts">
-                            <a t-if="card.email" t-attf-href="mailto:#{card.email}"
-                               class="dbc-link">✉ <t t-out="card.email"/></a>
-                            <a t-if="card.phone" t-attf-href="tel:#{card.phone}"
-                               class="dbc-link">☎ <t t-out="card.phone"/></a>
+                            <a t-if="card.contact_email" t-attf-href="mailto:#{card.contact_email}"
+                               class="dbc-link">✉ <t t-out="card.contact_email"/></a>
+                            <a t-if="card.contact_phone" t-attf-href="tel:#{card.contact_phone}"
+                               class="dbc-link">☎ <t t-out="card.contact_phone"/></a>
                             <a t-if="card.website_url" t-att-href="card.website_url"
                                class="dbc-link" target="_blank" rel="noopener noreferrer">
-                               🌐 <t t-out="card.website"/></a>
+                               🌐 <t t-out="card.contact_website"/></a>
                         </div>
 
                         <div class="dbc-qr">

@@ -26,7 +26,7 @@ up to any button, route or cron yet.
 """,
     'author': 'Soroush',
     'website': 'https://github.com/',
-    'depends': ['base', 'web'],
+    'depends': ['base', 'web', 'hr'],
     'data': [
         'security/ir.model.access.csv',
         'security/business_card_rules.xml',
@@ -34,6 +34,7 @@ up to any button, route or cron yet.
         'views/business_card_views.xml',
         'views/business_card_source_views.xml',
         'views/business_card_target_views.xml',
+        'views/hr_employee_actions.xml',
         'views/business_card_menus.xml',
     ],
     'application': True,

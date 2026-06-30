@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+        "Create Business Card" appears in the Employees app under Actions when
+        one or more employees are selected (or on the employee form). It makes
+        a card per employee and opens the result.
+    -->
+    <record id="action_emp_create_card" model="ir.actions.server">
+        <field name="name">Create Business Card</field>
+        <field name="model_id" ref="hr.model_hr_employee"/>
+        <field name="binding_model_id" ref="hr.model_hr_employee"/>
+        <field name="binding_view_types">list,form</field>
+        <field name="state">code</field>
+        <field name="code">
+cards = env['digital.business.card'].create_for_employees(records)
+action = {
+    'type': 'ir.actions.act_window',
+    'name': 'Business Cards',
+    'res_model': 'digital.business.card',
+    'view_mode': 'list,form',
+    'domain': [('id', 'in', cards.ids)],
+}
+        </field>
+    </record>
+
+</odoo>

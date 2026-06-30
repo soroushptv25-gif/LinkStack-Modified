@@ -21,10 +21,8 @@ Every card gets a **permanent public link** (`/card/<slug>`) and an
 - [Installation](#installation)
 - [Quick start](#quick-start)
 - [How the module works](#how-the-module-works)
+- [Linking to Employees (HR)](#linking-to-employees-hr)
 - [Connecting to a database (importing cards)](#connecting-to-a-database-importing-cards)
-- [Publishing cards to a 3rd-party web host](#publishing-cards-to-a-3rd-party-web-host)
-- [Security](#security)
-- [Developer reference](#developer-reference)
 - [FAQ](#faq)
 
 ---
@@ -34,6 +32,7 @@ Every card gets a **permanent public link** (`/card/<slug>`) and an
 | Capability | Where |
 |---|---|
 | A card per person (name, title, company, email, phone, website, bio, photo) | **Business Cards → Cards** |
+| Link a card to an **HR employee** — details pulled live | card's **Employee** field / **Employees → Actions → Create Business Card** |
 | Permanent public page per card | `http://<your-odoo>/card/<slug>` |
 | Auto-generated QR code (points at the public page) | shown on the card form & public page |
 | Import people from an external **PostgreSQL** DB or **HTTP** endpoint | **Business Cards → Data Sources** *(admin)* |
@@ -65,7 +64,8 @@ docker compose run --rm odoo odoo -d learn -u digital_business_card --stop-after
 docker compose start odoo
 ```
 
-**Requirements:** Odoo 19, depends only on `base` and `web`. QR generation uses
+**Requirements:** Odoo 19, depends on `base`, `web` and `hr` (the Employees
+app — installed automatically). QR generation uses
 Odoo's built-in barcode engine; PostgreSQL import uses `psycopg2` and HTTP uses
 `requests` — both already ship with Odoo, so there is nothing extra to install.
 
@@ -108,8 +108,7 @@ Odoo's built-in barcode engine; PostgreSQL import uses `psycopg2` and HTTP uses
 - **`qr_code`** is computed (not stored) and always encodes `public_url`, so the
   QR can never drift out of sync with the link.
 - **`source_html`** is an optional HTML body. When set, the public page renders
-  it instead of the built-in layout. It is **sanitized** (scripts removed) — see
-  [Security](#security).
+  it instead of the built-in layout. It is **sanitized** (scripts removed).
 - The public page (`/card/<slug>`) is **public** (no login). It reads the card
   with `sudo()`, so record-level access rules don't block anonymous visitors.
 
@@ -122,6 +121,39 @@ Like LinkStack, each card has **both**:
 
 The link never changes (as long as the slug stays the same); the QR image is
 re-rendered each time it's displayed.
+
+---
+
+## Linking to Employees (HR)
+
+Most companies already keep people in Odoo's **Employees** app, so a card can be
+linked to an `hr.employee` and **display its details live** — while outsiders
+only ever see the public card page, never the Employees app.
+
+**Create cards from employees:** go to **Employees**, tick the people you want,
+then **Actions ▾ → Create Business Card**. One card is made per employee (slug
+auto-generated from the name; existing cards are reused, not duplicated), and the
+created cards open so you can review them.
+
+**Or link manually:** on any card, set the **Employee** field.
+
+When a card is linked to an employee, the shown values come from the employee
+and update automatically:
+
+| Card shows | Pulled from `hr.employee` |
+|---|---|
+| Name | `name` |
+| Title | `job_title` (falls back to `job_id`) |
+| Company | `company_id` |
+| Email | `work_email` |
+| Phone | `work_phone` (falls back to `mobile_phone`) |
+| Photo | `image_1920` |
+| Website | the employee's company website |
+
+If **no** employee is linked, the card uses its own manually-entered fields
+instead. The employee is read internally with elevated rights, so a public
+visitor with no HR access still sees the published contact details — that's the
+whole point: **outsiders see the contact card, not the employee record.**
 
 ---
 
@@ -194,6 +226,8 @@ Buttons are the same: **Test Connection**, then **Import Cards**.
 | Method | Model | What it does |
 |---|---|---|
 | `_compute_public_url` / `_compute_qr_code` / `_compute_website_url` | card | derive link, QR, safe URL |
+| `_compute_contact` | card | the live `contact_*` values (employee when linked, else manual) |
+| `create_for_employees(employees)` | card | make one card per employee (used by the Employees action) |
 | `create_card_from_html_file(file_path, vals)` | card | **dormant** — build a card from a local HTML file; not wired to any button/route (parked for later) |
 | `action_test_connection` / `action_import_cards` | source | buttons: test / import |
 | `_fetch_rows_sql` / `_fetch_rows_http` / `_upsert_cards` | source | fetch + upsert by slug |

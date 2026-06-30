@@ -78,11 +78,11 @@ class DigitalBusinessCardTarget(models.Model):
         """JSON body for one card: details + permanent link + rendered HTML + QR."""
         return {
             'slug': card.slug,
-            'name': card.name,
-            'job_title': card.job_title or '',
-            'company': card.company or '',
-            'email': card.email or '',
-            'phone': card.phone or '',
+            'name': card.contact_name or '',
+            'job_title': card.contact_job_title or '',
+            'company': card.contact_company or '',
+            'email': card.contact_email or '',
+            'phone': card.contact_phone or '',
             'website': card.website_url or '',
             'bio': card.bio or '',
             'public_url': card.public_url or '',

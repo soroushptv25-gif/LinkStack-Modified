@@ -26,7 +26,15 @@ class DigitalBusinessCard(models.Model):
         default=lambda self: self.env.user)
     active = fields.Boolean(default=True)
 
-    # Details rendered on the card.
+    # Link to an HR employee. When set, the card SHOWS the employee's details
+    # (pulled live), so outsiders see the contact via the public card page
+    # without ever needing access to the Employees app.
+    employee_id = fields.Many2one(
+        'hr.employee', string='Employee', ondelete='set null',
+        help="When set, the card displays this employee's details (live).")
+
+    # Manual details — used as the card's own data, and as the fallback when no
+    # employee is linked.
     job_title = fields.Char(string='Job Title')
     company = fields.Char(string='Company')
     email = fields.Char(string='Email')
@@ -34,6 +42,19 @@ class DigitalBusinessCard(models.Model):
     website = fields.Char(string='Website')
     bio = fields.Text(string='Bio')
     photo = fields.Binary(string='Photo', attachment=True)
+
+    # What actually gets shown on the card: the linked employee's data when
+    # present, otherwise the manual fields above. Computed (not stored) so they
+    # always reflect the current employee record. The employee is read with
+    # sudo() so a public visitor — who has no access to hr.employee — still
+    # sees the published contact details.
+    contact_name = fields.Char(string='Shown Name', compute='_compute_contact')
+    contact_job_title = fields.Char(string='Shown Title', compute='_compute_contact')
+    contact_company = fields.Char(string='Shown Company', compute='_compute_contact')
+    contact_email = fields.Char(string='Shown Email', compute='_compute_contact')
+    contact_phone = fields.Char(string='Shown Phone', compute='_compute_contact')
+    contact_website = fields.Char(string='Shown Website', compute='_compute_contact')
+    contact_image = fields.Binary(string='Shown Photo', compute='_compute_contact')
 
     # Optional HTML body. When present, the public page renders this instead
     # of the built-in layout. It can come from UNTRUSTED external sources, so
@@ -69,10 +90,36 @@ class DigitalBusinessCard(models.Model):
         for card in self:
             card.public_url = '%s/card/%s' % (base, card.slug) if card.slug else False
 
-    @api.depends('website')
+    @api.depends('employee_id', 'name', 'job_title', 'company', 'email', 'phone',
+                 'website', 'photo',
+                 'employee_id.name', 'employee_id.job_title', 'employee_id.job_id',
+                 'employee_id.company_id', 'employee_id.work_email',
+                 'employee_id.work_phone', 'employee_id.mobile_phone',
+                 'employee_id.image_1920')
+    def _compute_contact(self):
+        for card in self:
+            emp = card.employee_id.sudo() if card.employee_id else False
+            if emp:
+                card.contact_name = emp.name or card.name
+                card.contact_job_title = emp.job_title or (emp.job_id.name or False)
+                card.contact_company = emp.company_id.name or False
+                card.contact_email = emp.work_email or False
+                card.contact_phone = emp.work_phone or emp.mobile_phone or False
+                card.contact_website = emp.company_id.website or False
+                card.contact_image = emp.image_1920 or False
+            else:
+                card.contact_name = card.name
+                card.contact_job_title = card.job_title
+                card.contact_company = card.company
+                card.contact_email = card.email
+                card.contact_phone = card.phone
+                card.contact_website = card.website
+                card.contact_image = card.photo
+
+    @api.depends('contact_website')
     def _compute_website_url(self):
         for card in self:
-            raw = (card.website or '').strip()
+            raw = (card.contact_website or '').strip()
             if not raw:
                 card.website_url = False
             elif raw.lower().startswith(('http://', 'https://')):
@@ -97,6 +144,45 @@ class DigitalBusinessCard(models.Model):
             except Exception:
                 _logger.warning("Could not generate QR code for card %s", card.id)
                 card.qr_code = False
+
+    # ------------------------------------------------------------------
+    # Creation helpers — make "a card per employee" effortless.
+    # ------------------------------------------------------------------
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            emp = (self.env['hr.employee'].browse(vals['employee_id'])
+                   if vals.get('employee_id') else False)
+            if emp:
+                # Default the record label and owner from the employee.
+                vals.setdefault('name', emp.name)
+                if not vals.get('user_id') and emp.user_id:
+                    vals['user_id'] = emp.user_id.id
+            if not vals.get('slug'):
+                base = vals.get('name') or (emp.name if emp else 'card')
+                vals['slug'] = self._unique_slug(base)
+        return super().create(vals_list)
+
+    def _unique_slug(self, base):
+        """Build a URL-safe, unique slug from a name."""
+        import re
+        root = re.sub(r'[^a-z0-9]+', '-', (base or 'card').lower()).strip('-') or 'card'
+        candidate, n = root, 1
+        Card = self.with_context(active_test=False)
+        while Card.search([('slug', '=', candidate)], limit=1):
+            n += 1
+            candidate = '%s-%d' % (root, n)
+        return candidate
+
+    @api.model
+    def create_for_employees(self, employees):
+        """Create one card per employee (skipping those that already have one).
+        Returns the cards for the given employees (existing + newly created)."""
+        cards = self.browse()
+        for emp in employees:
+            existing = self.search([('employee_id', '=', emp.id)], limit=1)
+            cards |= existing or self.create({'employee_id': emp.id})
+        return cards
 
     # ------------------------------------------------------------------
     # Dormant: HTML -> card importer.
