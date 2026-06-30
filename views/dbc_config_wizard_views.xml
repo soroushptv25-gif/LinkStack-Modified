@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_dbc_config_wizard_form" model="ir.ui.view">
+        <field name="name">digital.business.card.config.wizard.form</field>
+        <field name="model">digital.business.card.config.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Card Generation Settings">
+                <group>
+                    <field name="auto_generate"/>
+                    <field name="apply_scope" invisible="not auto_generate"/>
+                </group>
+                <footer>
+                    <button name="action_apply" type="object"
+                            string="Apply" class="btn-primary"/>
+                    <button string="Cancel" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_dbc_config" model="ir.actions.act_window">
+        <field name="name">Card Generation</field>
+        <field name="res_model">digital.business.card.config.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>

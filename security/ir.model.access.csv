@@ -4,3 +4,4 @@ access_dbc_admin,digital.business.card admin,model_digital_business_card,base.gr
 access_dbc_source_admin,digital.business.card.source admin,model_digital_business_card_source,base.group_system,1,1,1,1
 access_dbc_target_admin,digital.business.card.target admin,model_digital_business_card_target,base.group_system,1,1,1,1
 access_dbc_publish_wizard_admin,digital.business.card.publish.wizard admin,model_digital_business_card_publish_wizard,base.group_system,1,1,1,1
+access_dbc_config_wizard_admin,digital.business.card.config.wizard admin,model_digital_business_card_config_wizard,base.group_system,1,1,1,1

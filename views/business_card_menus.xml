@@ -27,4 +27,12 @@
               groups="base.group_system"
               sequence="30"/>
 
+    <!-- Manual/automatic generation settings, admins only. -->
+    <menuitem id="menu_dbc_config"
+              name="Card Generation"
+              parent="menu_dbc_root"
+              action="action_dbc_config"
+              groups="base.group_system"
+              sequence="40"/>
+
 </odoo>
