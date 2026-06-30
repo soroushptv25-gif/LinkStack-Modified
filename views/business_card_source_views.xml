@@ -7,7 +7,8 @@
         <field name="arch" type="xml">
             <list string="Data Sources">
                 <field name="name"/>
-                <field name="source_type"/>
+                <field name="db_host"/>
+                <field name="db_name"/>
                 <field name="last_sync"/>
                 <field name="last_count"/>
             </list>
@@ -31,11 +32,10 @@
                         <h1><field name="name" placeholder="e.g. LinkStack server"/></h1>
                     </div>
                     <group>
-                        <field name="source_type"/>
                         <field name="active"/>
                     </group>
 
-                    <group string="PostgreSQL Connection" invisible="source_type != 'sql'">
+                    <group string="PostgreSQL Connection">
                         <group>
                             <field name="db_host"/>
                             <field name="db_port"/>
@@ -52,12 +52,6 @@
                             <field name="col_name"/>
                             <field name="row_limit"/>
                         </group>
-                    </group>
-
-                    <group string="HTTP Source" invisible="source_type != 'http'">
-                        <field name="http_url" placeholder="https://example.com/api/people"/>
-                        <field name="http_token" password="True"/>
-                        <field name="allow_private"/>
                     </group>
 
                     <group string="Last Import">

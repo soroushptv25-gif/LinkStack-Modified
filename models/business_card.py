@@ -66,8 +66,13 @@ class DigitalBusinessCard(models.Model):
         string='Custom HTML', sanitize=True, sanitize_attributes=True,
         strip_style=False, strip_classes=False)
 
-    # Permanent public link + the QR code that points at it.
-    public_url = fields.Char(string='Public URL', compute='_compute_public_url')
+    # Permanent public link + the QR code that points at it. Each card has its
+    # own unique link/QR — share it, print the QR, or write the URL to an NFC
+    # tag. It opens the standalone public card page; visitors never reach the
+    # Odoo backend from it.
+    public_url = fields.Char(
+        string='Public URL', compute='_compute_public_url',
+        help="Per-card public link. Share it, print its QR, or write it to an NFC tag.")
     qr_code = fields.Binary(string='QR Code', compute='_compute_qr_code')
     # Scheme-safe version of `website` for use in a public <a href>: anything
     # that is not plainly http(s) is coerced to https:// so a "javascript:"

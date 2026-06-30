@@ -1,15 +1,12 @@
 # Part of the Digital Business Card module.
 #
-# A configurable external data source: the admin "plugs in" a server (a
-# PostgreSQL connection OR an HTTP URL), and this pulls person records whose
-# body is stored as HTML, then creates/updates business cards from them.
-import json
+# A configurable PostgreSQL data source: the admin "plugs in" a database server,
+# and this pulls person records whose body is stored as HTML, then creates or
+# updates business cards from them.
 import logging
 
-from odoo import api, fields, models
+from odoo import fields, models
 from odoo.exceptions import UserError
-
-from .net_utils import MAX_HTTP_BYTES, assert_url_allowed
 
 _logger = logging.getLogger(__name__)
 
@@ -21,11 +18,8 @@ class DigitalBusinessCardSource(models.Model):
 
     name = fields.Char(required=True)
     active = fields.Boolean(default=True)
-    source_type = fields.Selection(
-        [('sql', 'SQL database (PostgreSQL)'), ('http', 'HTTP / URL')],
-        string='Source Type', required=True, default='sql')
 
-    # --- SQL connection (PostgreSQL) -------------------------------------
+    # --- PostgreSQL connection -------------------------------------------
     db_host = fields.Char(string='Host', default='localhost')
     db_port = fields.Integer(string='Port', default=5432)
     db_name = fields.Char(string='Database')
@@ -40,18 +34,6 @@ class DigitalBusinessCardSource(models.Model):
                            help="Column for the display name; falls back to the slug.")
     row_limit = fields.Integer(string='Max Rows', default=100)
 
-    # --- HTTP source -----------------------------------------------------
-    http_url = fields.Char(string='URL')
-    http_token = fields.Char(string='Auth Token (optional)', copy=False,
-                             help="Sent as 'Authorization: Bearer <token>'.")
-
-    # Off by default: the HTTP fetcher refuses private/loopback/link-local
-    # addresses (SSRF guard). Turn on only for a trusted internal source.
-    allow_private = fields.Boolean(
-        string='Allow internal addresses', default=False,
-        help="Permit the HTTP source to reach private/internal IPs. "
-             "Leave off unless you trust the target network.")
-
     last_sync = fields.Datetime(string='Last Import', readonly=True)
     last_count = fields.Integer(string='Cards From Last Import', readonly=True)
 
@@ -59,11 +41,11 @@ class DigitalBusinessCardSource(models.Model):
     # Buttons (the easy-to-use entry points)
     # ------------------------------------------------------------------
     def action_test_connection(self):
-        """Reach the source without importing anything."""
+        """Reach the database without importing anything."""
         self.ensure_one()
         self._fetch_rows(test_only=True)
         return self._notify('Connection OK',
-                            'Reached the source successfully.', 'success')
+                            'Reached the database successfully.', 'success')
 
     def action_import_cards(self):
         """Pull every person row and create/update a card for each."""
@@ -75,20 +57,15 @@ class DigitalBusinessCardSource(models.Model):
                             '%s card(s) created or updated.' % count, 'success')
 
     # ------------------------------------------------------------------
-    # Fetching
+    # Fetching (PostgreSQL)
     # ------------------------------------------------------------------
     def _fetch_rows(self, test_only=False):
-        """Return a list of {slug, name, html} dicts from the source."""
+        """Return a list of {slug, name, html} dicts from the database."""
         self.ensure_one()
-        if self.source_type == 'sql':
-            return self._fetch_rows_sql(test_only=test_only)
-        return self._fetch_rows_http(test_only=test_only)
-
-    def _fetch_rows_sql(self, test_only=False):
         import psycopg2  # ships with Odoo
         for fname in ('db_host', 'db_name', 'db_user', 'db_table', 'col_slug', 'col_html'):
             if not self[fname]:
-                raise UserError("Please fill in the SQL field: %s" % fname)
+                raise UserError("Please fill in the field: %s" % fname)
 
         # Table/column names are identifiers — they can't be bound as query
         # parameters, so quote them and strip any embedded quotes defensively.
@@ -119,7 +96,7 @@ class DigitalBusinessCardSource(models.Model):
             cur.execute(query)
             records = cur.fetchall()
         except Exception as e:
-            raise UserError("SQL source error: %s" % e)
+            raise UserError("Database error: %s" % e)
         finally:
             if conn:
                 conn.close()
@@ -133,66 +110,6 @@ class DigitalBusinessCardSource(models.Model):
             name = rec[2] if (self.col_name and len(rec) > 2 and rec[2]) else slug
             rows.append({'slug': str(slug), 'html': html, 'name': str(name)})
         return rows
-
-    def _fetch_rows_http(self, test_only=False):
-        import requests  # ships with Odoo
-        if not self.http_url:
-            raise UserError("Please fill in the URL.")
-        assert_url_allowed(self.http_url, self.allow_private)
-        headers = {}
-        if self.http_token:
-            headers['Authorization'] = 'Bearer %s' % self.http_token
-        try:
-            # allow_redirects=False: a redirect could otherwise bounce us to an
-            # internal address after the SSRF check has already passed.
-            resp = requests.get(self.http_url, headers=headers, timeout=15,
-                                allow_redirects=False, stream=True)
-            resp.raise_for_status()
-            # Read with a hard size cap so a huge/hostile body can't OOM us.
-            chunks, total = [], 0
-            for chunk in resp.iter_content(8192):
-                total += len(chunk)
-                if total > MAX_HTTP_BYTES:
-                    raise UserError("Response is larger than the 5 MB limit.")
-                chunks.append(chunk)
-        except UserError:
-            raise
-        except Exception as e:
-            raise UserError("HTTP source error: %s" % e)
-        finally:
-            resp_close = getattr(locals().get('resp', None), 'close', None)
-            if resp_close:
-                resp_close()
-        if test_only:
-            return []
-
-        body = b''.join(chunks).decode(resp.encoding or 'utf-8', errors='replace')
-        ctype = resp.headers.get('Content-Type', '')
-        # A JSON list/array of people -> many cards. Anything else -> treat the
-        # whole response body as one person's HTML.
-        if 'application/json' in ctype or body.strip()[:1] in ('[', '{'):
-            try:
-                data = json.loads(body)
-            except ValueError:
-                data = None
-            if isinstance(data, dict):
-                data = data.get('data') or data.get('results') or [data]
-            if isinstance(data, list):
-                rows = []
-                for item in data:
-                    if not isinstance(item, dict):
-                        continue
-                    slug = item.get('slug') or item.get('id') or item.get('username')
-                    if slug is None:
-                        continue
-                    rows.append({
-                        'slug': str(slug),
-                        'html': item.get('html') or item.get('content') or '',
-                        'name': str(item.get('name') or slug),
-                    })
-                return rows
-        slug = self.http_url.rstrip('/').split('/')[-1] or 'imported'
-        return [{'slug': slug, 'html': body, 'name': slug}]
 
     # ------------------------------------------------------------------
     # Upsert: create new cards or refresh existing ones (matched by slug).

@@ -122,6 +122,10 @@ Like LinkStack, each card has **both**:
 The link never changes (as long as the slug stays the same); the QR image is
 re-rendered each time it's displayed.
 
+**Each card has its own link and QR**, ready to share, print, or **write to an
+NFC tag / business card**. Opening it shows only the standalone public card
+page — visitors never reach the Odoo backend or any logged-in area from it.
+
 ---
 
 ## Linking to Employees (HR)
@@ -162,16 +166,8 @@ whole point: **outsiders see the contact card, not the employee record.**
 
 ## Connecting to a database (importing cards)
 
-> **Do you have to connect to the database?** Yes. To read people from another
-> server, Odoo must open a connection to it — you supply the connection details
-> once, and the module does the rest. This screen is **admin-only** because it
-> stores credentials.
-
-Go to **Business Cards → Data Sources → New**. Pick a **Source Type**.
-
-### Option A — SQL database (PostgreSQL)
-
-Fill in:
+Import people from an external **PostgreSQL** database. Go to
+**Business Cards → Data Sources → New** *(admin)* and fill in:
 
 | Field | Example | Meaning |
 |---|---|---|
@@ -183,33 +179,13 @@ Fill in:
 | Key/Slug Column | `handle` | becomes the card's unique slug |
 | HTML Column | `body` | the person's HTML |
 | Name Column *(optional)* | `fullname` | display name (falls back to the slug) |
-| Max Rows | `100` | safety limit per import |
+| Max Rows | `100` | how many rows to read per import |
 
 Then:
 
-1. Click **Test Connection** — confirms Odoo can reach the server.
+1. Click **Test Connection** — confirms Odoo can reach the database.
 2. Click **Import Cards** — reads the rows and **creates or updates** a card per
    row (matched by slug, so re-importing refreshes existing cards).
-
-The SQL session is forced **read-only**, so an import can never modify the
-source database.
-
-### Option B — HTTP / URL
-
-Fill in **URL** (and optionally an **Auth Token**, sent as
-`Authorization: Bearer <token>`). The fetcher behaves like this:
-
-- If the response is a **JSON array** (or `{ "data": [ ... ] }`) of objects, each
-  object becomes a card. Recognised keys: `slug`/`id`/`username`, `name`,
-  `html`/`content`.
-- Otherwise the **whole response body** is treated as one person's HTML, and the
-  slug is taken from the last path segment of the URL.
-
-Buttons are the same: **Test Connection**, then **Import Cards**.
-
-> By default the HTTP fetcher refuses private/internal addresses (SSRF guard).
-> If your source is on a trusted internal network, tick **Allow internal
-> addresses**.
 
 ---
 
@@ -219,10 +195,10 @@ Buttons are the same: **Test Connection**, then **Import Cards**.
 | Model | File | Purpose |
 |---|---|---|
 | `digital.business.card` | `models/business_card.py` | the card; public link + QR |
-| `digital.business.card.source` | `models/business_card_source.py` | import config (SQL/HTTP) |
+| `digital.business.card.source` | `models/business_card_source.py` | PostgreSQL import config |
 | `digital.business.card.target` | `models/business_card_target.py` | publish config |
 | `digital.business.card.publish.wizard` | `models/business_card_target.py` | "Publish to Web" dialog |
-| *(helpers)* | `models/net_utils.py` | shared SSRF guard + size cap |
+| *(helpers)* | `models/net_utils.py` | shared network helpers |
 
 ### Key methods
 
