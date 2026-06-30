@@ -37,6 +37,7 @@ up to any button, route or cron yet.
         'views/hr_employee_actions.xml',
         'views/business_card_menus.xml',
     ],
+    'post_init_hook': 'post_init_hook',
     'application': True,
     'installable': True,
     'license': 'LGPL-3',

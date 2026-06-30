@@ -130,12 +130,15 @@ Most companies already keep people in Odoo's **Employees** app, so a card can be
 linked to an `hr.employee` and **display its details live** — while outsiders
 only ever see the public card page, never the Employees app.
 
-**Create cards from employees:** go to **Employees**, tick the people you want,
-then **Actions ▾ → Create Business Card**. One card is made per employee (slug
-auto-generated from the name; existing cards are reused, not duplicated), and the
-created cards open so you can review them.
+**Automatic:** every employee gets a public business card automatically — a new
+employee gets one the moment it's created, and installing the module backfills
+all existing employees. Slugs are generated from the name; existing cards are
+reused, never duplicated.
 
-**Or link manually:** on any card, set the **Employee** field.
+**Manual options too:**
+- **Employees → tick people → Actions ▾ → Create Business Card** (creates any
+  that are missing and opens them).
+- On any card, set the **Employee** field directly.
 
 When a card is linked to an employee, the shown values come from the employee
 and update automatically:
