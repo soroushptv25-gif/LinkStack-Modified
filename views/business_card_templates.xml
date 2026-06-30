@@ -38,12 +38,6 @@
                                🌐 <t t-out="card.contact_website"/></a>
                         </div>
 
-                        <div class="dbc-qr">
-                            <img t-attf-src="/web/image/digital.business.card/#{card.id}/qr_code"
-                                 alt="QR code"/>
-                            <small>Scan to open this card</small>
-                        </div>
-
                         <a class="dbc-link dbc-vcard" t-attf-href="/card/#{card.slug}/vcard">
                            👤 Import to contact</a>
                     </div>
