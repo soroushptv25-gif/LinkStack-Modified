@@ -1,9 +1,24 @@
 # Part of the Digital Business Card module.
-from odoo import api, models
+from odoo import api, fields, models
 
 
 class HrEmployee(models.Model):
     _inherit = 'hr.employee'
+
+    business_card_ids = fields.One2many(
+        'digital.business.card', 'employee_id', string='Business Cards')
+    # Stored so it can be filtered efficiently ("employees without a card").
+    # Computed with sudo() so it is correct no matter who owns the card
+    # (regular users only see their own cards through the record rules).
+    has_business_card = fields.Boolean(
+        string='Has Business Card', compute='_compute_has_business_card', store=True)
+
+    @api.depends('business_card_ids')
+    def _compute_has_business_card(self):
+        Card = self.env['digital.business.card'].sudo()
+        for employee in self:
+            employee.has_business_card = bool(
+                Card.search_count([('employee_id', '=', employee.id)])) if employee.id else False
 
     @api.model_create_multi
     def create(self, vals_list):

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Employees that still have no business card. Newest first, so freshly
+         added employees show at the top. Tick them and use
+         Actions ▾ → Create Business Card to generate. -->
+    <record id="view_emp_no_card_tree" model="ir.ui.view">
+        <field name="name">hr.employee.no.card.tree</field>
+        <field name="model">hr.employee</field>
+        <field name="arch" type="xml">
+            <tree string="Employees without a Card" default_order="create_date desc"
+                  create="false">
+                <field name="name"/>
+                <field name="job_title"/>
+                <field name="department_id"/>
+                <field name="work_email"/>
+                <field name="create_date" string="Added on"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="action_emp_no_card" model="ir.actions.act_window">
+        <field name="name">Employees without a Card</field>
+        <field name="res_model">hr.employee</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="view_emp_no_card_tree"/>
+        <field name="domain">[('has_business_card', '=', False)]</field>
+        <field name="context">{'search_default_group_department': 0}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Everyone has a business card 🎉</p>
+            <p>New employees without a card will appear here. Select them and use
+               <b>Actions → Create Business Card</b> to generate cards.</p>
+        </field>
+    </record>
+
+</odoo>

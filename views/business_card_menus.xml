@@ -11,6 +11,13 @@
               action="action_dbc"
               sequence="10"/>
 
+    <!-- Employees who still need a card (works even when auto-generation is off). -->
+    <menuitem id="menu_dbc_emp_no_card"
+              name="Employees without a Card"
+              parent="menu_dbc_root"
+              action="action_emp_no_card"
+              sequence="15"/>
+
     <!-- Data sources hold server credentials, so admins only. -->
     <menuitem id="menu_dbc_sources"
               name="Data Sources"
