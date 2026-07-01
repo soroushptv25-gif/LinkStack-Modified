@@ -138,18 +138,20 @@ Most companies already keep people in Odoo's **Employees** app, so a card can be
 linked to an `hr.employee` and **display its details live** — while outsiders
 only ever see the public card page, never the Employees app.
 
-**Generation is manual by default** — you decide which employees get a card:
-- **Employees → tick people → Actions ▾ → Create Business Card** (creates any
-  that are missing and opens them).
-- On any card, set the **Employee** field directly.
+**Every employee appears in the Cards list by name.** Until you generate a card
+for them, the row shows the **name only** — no link, no QR, and the other
+details are hidden. Generating is what creates the link + QR (and reveals the
+details):
 
-**Switch to automatic** if you'd rather every employee get a card: go to
-**Business Cards → Card Generation** *(admin)*, turn on **Automatically generate
-employee cards**, and choose the scope:
+- In **Business Cards → Cards**, tick the name-only rows and click
+  **Actions ▾ → Generate**, or open a card and click **Generate Link & QR**.
+- From the Employees app: tick people → **Actions ▾ → Create Business Card**
+  (creates + generates in one step).
 
-- **Only future employees** — new employees get a card from then on.
-- **All existing employees now (and future)** — also creates cards for everyone
-  already in the system.
+**Automatic mode** (optional): **Business Cards → Card Generation** *(admin)* →
+turn on **Automatically generate employee cards** and choose the scope (future
+employees only, or all existing now). Then new employees get their link + QR
+right away instead of staying name-only.
 
 Slugs are generated from the name; existing cards are reused, never duplicated.
 

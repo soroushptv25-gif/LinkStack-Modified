@@ -37,7 +37,6 @@ up to any button, route or cron yet.
         'views/business_card_target_views.xml',
         'views/dbc_config_wizard_views.xml',
         'views/hr_employee_actions.xml',
-        'views/employee_no_card_views.xml',
         'views/business_card_menus.xml',
     ],
     'application': True,

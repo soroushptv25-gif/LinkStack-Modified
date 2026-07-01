@@ -16,11 +16,16 @@ class DigitalBusinessCard(models.Model):
 
     name = fields.Char(string='Full Name', required=True)
     # The slug is the permanent, shareable handle: the public card lives at
-    # /card/<slug>. Kept unique and copy=False so duplicating a card asks for
-    # a fresh link instead of clashing.
+    # /card/<slug>. It is EMPTY until the card is generated — an employee shows
+    # in the list by name only until then. Unique + copy=False.
     slug = fields.Char(
-        string='Card Link', required=True, copy=False, index=True,
-        help="URL-safe handle. The public card is served at /card/<slug>.")
+        string='Card Link', copy=False, index=True,
+        help="URL-safe handle, assigned when the card is generated. "
+             "The public card is then served at /card/<slug>.")
+    # True once a link/QR has been generated (i.e. a slug exists). Stored so the
+    # list can distinguish name-only rows from generated cards.
+    generated = fields.Boolean(
+        string='Generated', compute='_compute_generated', store=True)
     user_id = fields.Many2one(
         'res.users', string='Owner', ondelete='cascade',
         default=lambda self: self.env.user)
@@ -90,25 +95,36 @@ class DigitalBusinessCard(models.Model):
     ]
 
     @api.depends('slug')
+    def _compute_generated(self):
+        for card in self:
+            card.generated = bool(card.slug)
+
+    @api.depends('slug')
     def _compute_public_url(self):
         base = self.env['ir.config_parameter'].sudo().get_param('web.base.url') or ''
         for card in self:
             card.public_url = '%s/card/%s' % (base, card.slug) if card.slug else False
 
-    @api.depends('employee_id', 'name', 'job_title', 'company', 'email', 'phone',
+    @api.depends('slug', 'employee_id', 'name', 'job_title', 'company', 'email', 'phone',
                  'website', 'photo',
                  'employee_id.name', 'employee_id.job_title', 'employee_id.job_id',
                  'employee_id.company_id', 'employee_id.work_email',
                  'employee_id.work_phone', 'employee_id.mobile_phone',
                  'employee_id.image_1920')
     def _compute_contact(self):
-        # Override model: a value entered on the card wins; when left blank, the
-        # linked employee's live value is used. So mail/phone/position can be
-        # edited per card, while still defaulting to HR data.
+        # The NAME always shows (that's the name-only placeholder row). The rest
+        # of the details only appear once the card is generated (has a slug).
+        # For a generated card the override model applies: a value entered on the
+        # card wins; when blank, the linked employee's live value is used.
         for card in self:
             emp = card.employee_id.sudo() if card.employee_id else False
-            emp_title = (emp.job_title or (emp.job_id.name or False)) if emp else False
             card.contact_name = card.name or (emp.name if emp else False)
+            if not card.slug:
+                card.contact_job_title = card.contact_company = False
+                card.contact_email = card.contact_phone = False
+                card.contact_website = card.contact_image = False
+                continue
+            emp_title = (emp.job_title or (emp.job_id.name or False)) if emp else False
             card.contact_job_title = card.job_title or emp_title
             card.contact_company = card.company or (emp.company_id.name if emp else False)
             card.contact_email = card.email or (emp.work_email if emp else False)
@@ -156,14 +172,22 @@ class DigitalBusinessCard(models.Model):
             emp = (self.env['hr.employee'].browse(vals['employee_id'])
                    if vals.get('employee_id') else False)
             if emp:
-                # Default the record label and owner from the employee.
+                # Default the record label and owner from the employee. The slug
+                # is left empty on purpose — the card is a name-only placeholder
+                # until it is generated.
                 vals.setdefault('name', emp.name)
                 if not vals.get('user_id') and emp.user_id:
                     vals['user_id'] = emp.user_id.id
-            if not vals.get('slug'):
-                base = vals.get('name') or (emp.name if emp else 'card')
-                vals['slug'] = self._unique_slug(base)
         return super().create(vals_list)
+
+    def action_generate(self):
+        """Generate the link + QR: give each card a slug if it doesn't have one.
+        After this, public_url and qr_code are populated automatically."""
+        for card in self:
+            if not card.slug:
+                base = card.name or (card.employee_id.name if card.employee_id else 'card')
+                card.slug = self._unique_slug(base)
+        return True
 
     def _unique_slug(self, base):
         """Build a URL-safe, unique slug from a name."""
