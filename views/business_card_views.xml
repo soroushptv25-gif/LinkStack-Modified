@@ -108,10 +108,84 @@
         </field>
     </record>
 
+    <record id="view_dbc_search" model="ir.ui.view">
+        <field name="name">digital.business.card.search</field>
+        <field name="model">digital.business.card</field>
+        <field name="arch" type="xml">
+            <search string="Business Cards">
+                <field name="contact_name" string="Name"
+                       filter_domain="['|', '|', ('name', 'ilike', self), ('slug', 'ilike', self), ('employee_id.name', 'ilike', self)]"/>
+                <field name="employee_id"/>
+                <field name="contact_company" string="Company"/>
+                <field name="contact_job_title" string="Position"/>
+                <field name="slug"/>
+                <separator/>
+                <filter name="f_draft" string="Draft" domain="[('state', '=', 'draft')]"/>
+                <filter name="f_published" string="Published" domain="[('state', '=', 'published')]"/>
+                <filter name="f_deactivated" string="Deactivated" domain="[('state', '=', 'deactivated')]"/>
+                <separator/>
+                <filter name="f_my" string="My Cards" domain="[('user_id', '=', uid)]"/>
+                <filter name="f_employee" string="Linked to Employee" domain="[('employee_id', '!=', False)]"/>
+                <group expand="0" string="Group By">
+                    <filter name="g_state" string="Status" context="{'group_by': 'state'}"/>
+                    <filter name="g_employee" string="Employee" context="{'group_by': 'employee_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_dbc_kanban" model="ir.ui.view">
+        <field name="name">digital.business.card.kanban</field>
+        <field name="model">digital.business.card</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state" sample="1">
+                <field name="state"/>
+                <field name="public_url"/>
+                <field name="contact_image"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div class="oe_kanban_global_click o_kanban_record_has_image_fill">
+                            <div class="o_kanban_record_top mb-2">
+                                <img class="o_image_40_cover rounded me-2"
+                                     t-att-src="kanban_image('digital.business.card', 'contact_image', record.id.raw_value)"
+                                     alt="Photo"/>
+                                <div class="o_kanban_record_headings flex-grow-1">
+                                    <strong class="o_kanban_record_title">
+                                        <field name="contact_name"/>
+                                    </strong>
+                                    <div class="text-muted" t-if="record.contact_job_title.raw_value">
+                                        <field name="contact_job_title"/>
+                                    </div>
+                                    <div class="text-muted" t-if="record.contact_company.raw_value">
+                                        <field name="contact_company"/>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="o_kanban_record_bottom">
+                                <div class="oe_kanban_bottom_left">
+                                    <field name="state" widget="label_selection"
+                                           options="{'classes': {'draft': 'secondary', 'published': 'success', 'deactivated': 'danger'}}"/>
+                                </div>
+                                <div class="oe_kanban_bottom_right">
+                                    <a t-if="record.public_url.raw_value"
+                                       t-att-href="record.public_url.value" target="_blank"
+                                       title="Open public page" onclick="event.stopPropagation()">
+                                        <i class="fa fa-external-link"/>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
     <record id="action_dbc" model="ir.actions.act_window">
         <field name="name">Business Cards</field>
         <field name="res_model">digital.business.card</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">kanban,tree,form</field>
+        <field name="search_view_id" ref="view_dbc_search"/>
     </record>
 
 </odoo>

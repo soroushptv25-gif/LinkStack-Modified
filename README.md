@@ -39,6 +39,7 @@ Deactivating switches the link and QR back off.
 |---|---|
 | Every employee shows in the Cards list **by name** (Draft); **Publish** to create the link + QR | **Business Cards → Cards** |
 | Card **workflow**: Draft → Published → Deactivated (deactivate switches the link/QR off) | card form buttons |
+| **Kanban & list** views, plus **search / filters** (by status, name, company, position) and group-by | **Business Cards → Cards** |
 | A card **linked to an HR employee** — details pulled live, editable per card | the card's **Employee** field |
 | Permanent public card page + QR + vCard | `http://<your-odoo>/card/<slug>` |
 | Manual **or** automatic card generation | **Business Cards → Card Generation** *(admin)* |

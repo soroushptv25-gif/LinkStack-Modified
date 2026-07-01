@@ -60,9 +60,12 @@ class DigitalBusinessCard(models.Model):
     # always reflect the current employee record. The employee is read with
     # sudo() so a public visitor — who has no access to hr.employee — still
     # sees the published contact details.
-    contact_name = fields.Char(string='Shown Name', compute='_compute_contact')
-    contact_job_title = fields.Char(string='Shown Title', compute='_compute_contact')
-    contact_company = fields.Char(string='Shown Company', compute='_compute_contact')
+    contact_name = fields.Char(string='Shown Name', compute='_compute_contact',
+                               search='_search_contact_name')
+    contact_job_title = fields.Char(string='Shown Title', compute='_compute_contact',
+                                    search='_search_contact_job_title')
+    contact_company = fields.Char(string='Shown Company', compute='_compute_contact',
+                                  search='_search_contact_company')
     contact_email = fields.Char(string='Shown Email', compute='_compute_contact')
     contact_phone = fields.Char(string='Shown Phone', compute='_compute_contact')
     contact_website = fields.Char(string='Shown Website', compute='_compute_contact')
@@ -143,6 +146,20 @@ class DigitalBusinessCard(models.Model):
             card.contact_website = card.website or (
                 emp.company_id.website if emp else False)
             card.contact_image = card.photo or (emp.image_1920 if emp else False)
+
+    # Make the shown values searchable: match the card's own field OR the
+    # linked employee's, so the search box finds either source.
+    def _search_contact_name(self, operator, value):
+        return ['|', ('name', operator, value), ('employee_id.name', operator, value)]
+
+    def _search_contact_company(self, operator, value):
+        return ['|', ('company', operator, value),
+                ('employee_id.company_id.name', operator, value)]
+
+    def _search_contact_job_title(self, operator, value):
+        return ['|', '|', ('job_title', operator, value),
+                ('employee_id.job_title', operator, value),
+                ('employee_id.job_id.name', operator, value)]
 
     @api.depends('contact_website')
     def _compute_website_url(self):
