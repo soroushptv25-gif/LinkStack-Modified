@@ -2,22 +2,9 @@
 <odoo>
 
     <!--
-        "Generate" on the Cards list Actions menu: give each selected card a
-        link + QR (assign a slug). Name-only rows become full cards.
-    -->
-    <record id="action_generate_missing_cards" model="ir.actions.server">
-        <field name="name">Generate</field>
-        <field name="model_id" ref="model_digital_business_card"/>
-        <field name="binding_model_id" ref="model_digital_business_card"/>
-        <field name="binding_view_types">tree,form</field>
-        <field name="state">code</field>
-        <field name="code">records.action_generate()</field>
-    </record>
-
-    <!--
-        "Create Business Card" appears in the Employees app under Actions. It
-        makes a card per selected employee AND generates its link + QR, then
-        opens the result.
+        "Create Business Card" appears in the Employees app under Actions (the
+        gear menu). It makes a card per selected employee AND publishes it
+        (link + QR live), then opens the result.
     -->
     <record id="action_emp_create_card" model="ir.actions.server">
         <field name="name">Create Business Card</field>
@@ -27,7 +14,7 @@
         <field name="state">code</field>
         <field name="code">
 cards = env['digital.business.card'].create_for_employees(records)
-cards.action_generate()
+cards.action_publish()
 action = {
     'type': 'ir.actions.act_window',
     'name': 'Business Cards',

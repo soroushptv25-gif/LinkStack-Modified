@@ -26,6 +26,13 @@ class DigitalBusinessCard(models.Model):
     # list can distinguish name-only rows from generated cards.
     generated = fields.Boolean(
         string='Generated', compute='_compute_generated', store=True)
+    # Workflow: Draft (name only) -> Published (link + QR live) -> Deactivated
+    # (link + QR disabled; the public page 404s).
+    state = fields.Selection(
+        [('draft', 'Draft'), ('published', 'Published'), ('deactivated', 'Deactivated')],
+        string='Status', default='draft', copy=False, index=True,
+        help="Draft: name only. Published: the link and QR are live. "
+             "Deactivated: the link and QR are switched off.")
     user_id = fields.Many2one(
         'res.users', string='Owner', ondelete='cascade',
         default=lambda self: self.env.user)
@@ -99,11 +106,14 @@ class DigitalBusinessCard(models.Model):
         for card in self:
             card.generated = bool(card.slug)
 
-    @api.depends('slug')
+    @api.depends('slug', 'state')
     def _compute_public_url(self):
+        # The link only exists while the card is PUBLISHED. Deactivating (or
+        # reverting to draft) blanks the link and QR — the public page 404s.
         base = self.env['ir.config_parameter'].sudo().get_param('web.base.url') or ''
         for card in self:
-            card.public_url = '%s/card/%s' % (base, card.slug) if card.slug else False
+            live = card.slug and card.state == 'published'
+            card.public_url = '%s/card/%s' % (base, card.slug) if live else False
 
     @api.depends('slug', 'employee_id', 'name', 'job_title', 'company', 'email', 'phone',
                  'website', 'photo',
@@ -180,14 +190,52 @@ class DigitalBusinessCard(models.Model):
                     vals['user_id'] = emp.user_id.id
         return super().create(vals_list)
 
-    def action_generate(self):
-        """Generate the link + QR: give each card a slug if it doesn't have one.
-        After this, public_url and qr_code are populated automatically."""
+    # ------------------------------------------------------------------
+    # Workflow: draft -> published -> deactivated
+    # ------------------------------------------------------------------
+    def action_publish(self):
+        """Draft/Deactivated -> Published: assign a slug if missing (creating
+        the link + QR) and go live."""
         for card in self:
             if not card.slug:
                 base = card.name or (card.employee_id.name if card.employee_id else 'card')
                 card.slug = self._unique_slug(base)
+        self.write({'state': 'published'})
         return True
+
+    def action_deactivate(self):
+        """Published -> Deactivated: switch the link + QR off (page 404s). The
+        slug is kept so re-publishing reuses the same link."""
+        self.write({'state': 'deactivated'})
+        return True
+
+    def action_set_draft(self):
+        """Back to Draft (name only)."""
+        self.write({'state': 'draft'})
+        return True
+
+    def action_update_from_employee(self):
+        """Refresh the shown details from the linked employee's current data.
+        (The details are live-computed, so this is a manual re-sync.)"""
+        self.invalidate_recordset([
+            'contact_name', 'contact_job_title', 'contact_company', 'contact_email',
+            'contact_phone', 'contact_website', 'contact_image'])
+        return {
+            'type': 'ir.actions.client', 'tag': 'display_notification',
+            'params': {'title': 'Updated',
+                       'message': 'Card details refreshed from the employee.',
+                       'type': 'success', 'sticky': False},
+        }
+
+    def action_download_qr(self):
+        """Download the QR code PNG for this card."""
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_url',
+            'url': '/web/image/digital.business.card/%s/qr_code?download=true'
+                   '&filename=%s-qr.png' % (self.id, self.slug or 'card'),
+            'target': 'new',
+        }
 
     def _unique_slug(self, base):
         """Build a URL-safe, unique slug from a name."""

@@ -127,7 +127,8 @@ class DigitalBusinessCardSource(models.Model):
             if card:
                 card.write(vals)
             else:
-                Card.create(dict(vals, slug=slug))
+                # Imported cards arrive with a slug + content, so publish them.
+                Card.create(dict(vals, slug=slug, state='published'))
             count += 1
         return count
 

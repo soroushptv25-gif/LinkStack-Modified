@@ -13,8 +13,10 @@ class DigitalBusinessCardSite(http.Controller):
     """
 
     def _get_card(self, slug):
+        # Only PUBLISHED cards are reachable — draft/deactivated ones 404.
         return request.env['digital.business.card'].sudo().search(
-            [('slug', '=', slug), ('active', '=', True)], limit=1)
+            [('slug', '=', slug), ('active', '=', True), ('state', '=', 'published')],
+            limit=1)
 
     @http.route('/card/<string:slug>', type='http', auth='public', website=False)
     def card_page(self, slug, **kw):

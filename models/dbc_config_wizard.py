@@ -39,7 +39,7 @@ class DigitalBusinessCardConfigWizard(models.TransientModel):
         if self.auto_generate and self.apply_scope == 'all':
             employees = self.env['hr.employee'].sudo().search([])
             cards = self.env['digital.business.card'].sudo().create_for_employees(employees)
-            cards.action_generate()
+            cards.action_publish()
             created = len(cards)
         if self.auto_generate:
             message = 'Automatic generation is ON.'

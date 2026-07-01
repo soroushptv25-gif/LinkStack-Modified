@@ -1,6 +1,6 @@
 {
     'name': 'Digital Business Card',
-    'version': '17.0.1.0.0',
+    'version': '17.0.1.1.0',
     'category': 'Marketing',
     'summary': 'Shareable digital business cards with a permanent link and an auto-generated QR code.',
     'description': """

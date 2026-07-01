@@ -12,9 +12,10 @@ details. It also adds two integrations LinkStack doesn't have:
 1. **Import** people (stored as HTML) from an external **PostgreSQL** database.
 2. **Publish** selected cards to a **3rd-party web host**.
 
-Once a card is **generated** it gets a **permanent public link**
-(`/card/<slug>`), an **auto-generated QR code**, and an **"Import to contact"**
-vCard download.
+Each card follows a simple workflow — **Draft → Published → Deactivated**. Once
+**published**, it gets a **permanent public link** (`/card/<slug>`), an
+**auto-generated QR code**, and an **"Import to contact"** vCard download.
+Deactivating switches the link and QR back off.
 
 ---
 
@@ -36,7 +37,8 @@ vCard download.
 
 | Capability | Where |
 |---|---|
-| Every employee shows in the Cards list **by name**; generate to create their card | **Business Cards → Cards** |
+| Every employee shows in the Cards list **by name** (Draft); **Publish** to create the link + QR | **Business Cards → Cards** |
+| Card **workflow**: Draft → Published → Deactivated (deactivate switches the link/QR off) | card form buttons |
 | A card **linked to an HR employee** — details pulled live, editable per card | the card's **Employee** field |
 | Permanent public card page + QR + vCard | `http://<your-odoo>/card/<slug>` |
 | Manual **or** automatic card generation | **Business Cards → Card Generation** *(admin)* |
@@ -78,23 +80,24 @@ uses `requests`. Nothing extra to install.
 
 ## Quick start
 
-1. Open **Business Cards → Cards**. You'll see **one row per employee** — at
-   first each shows the **name only** (greyed out, no link, no QR).
-2. **Tick the rows** you want and click **Actions ▾ → Generate** (or open a card
-   and click **Generate Link & QR**).
-3. The card now has a **link + QR** and its details appear. Open
-   `http://<your-odoo>/card/<slug>`, or grab the QR from the card form.
-4. To make a standalone card (not tied to an employee): **Cards → New**, type a
-   name, then **Generate**.
+1. Open **Business Cards → Cards**. You'll see **one row per employee** — a
+   **Draft** card showing the **name only** (greyed out, no link, no QR).
+2. Open a card and click **Publish** (top-left). It gets a **link + QR** and its
+   details appear. Open `http://<your-odoo>/card/<slug>` or **Download QR**.
+3. To switch a card off, click **Deactivate** — the link/QR stop working (the
+   page 404s). **Publish** again to bring it back (same link).
+4. Fast path from the Employees app: tick people → **Actions (gear) → Create
+   Business Card** (creates + publishes in one step).
 
 ---
 
 ## How the module works
 
 ```
-   Employees ──▶ every employee gets a name-only card (placeholder)
+   Employees ──▶ every employee gets a name-only Draft card
                          │
-                     Generate  (Actions ▸ Generate  /  form button)
+                     Publish  (Draft ▸ Published — link + QR live)
+                     Deactivate  (Published ▸ Deactivated — link + QR off)
                          ▼
               ┌───────────────────────────────┐
               │  digital.business.card         │
@@ -139,17 +142,24 @@ automatically appears in the Cards list. A card can be linked to an
 `hr.employee` and **display its details live** — while outsiders only ever see
 the public card page, never the Employees app.
 
-**Generating** (turning a name-only row into a real card with link + QR):
-- **Cards → tick rows → Actions ▾ → Generate**, or open a card → **Generate
-  Link & QR**.
-- **Employees → tick people → Actions ▾ → Create Business Card** (creates +
-  generates in one step).
+**The card workflow** (buttons at the top of the card form):
+- **Publish** — Draft → Published: assigns the slug and turns the **link + QR**
+  on. The card's details appear.
+- **Deactivate** — Published → Deactivated: turns the link + QR **off** (the
+  public page 404s). The slug is kept, so **Publish** again reuses the same link.
+- **Reset to Draft** — back to name-only.
+- **Download QR** — save the QR PNG (published cards).
+- **Update from Employee** — re-sync the shown details from the employee (they
+  are live anyway, this is a manual refresh).
+
+From the **Employees** app: tick people → **Actions (gear) → Create Business
+Card** creates + publishes in one step.
 
 **Manual vs automatic** — **Business Cards → Card Generation** *(admin)*:
-- **Manual (default):** employees appear name-only; you generate on demand.
+- **Manual (default):** employees appear as Draft (name-only); you publish on demand.
 - **Automatic:** turn on *Automatically generate employee cards* and pick the
-  scope (future employees only, or all existing now) so new employees get their
-  link + QR immediately.
+  scope (future employees only, or all existing now) so new employees are
+  **published** immediately.
 
 When a card is linked to an employee, the shown values come from the employee:
 
@@ -243,8 +253,9 @@ don't need it.
 
 | Method | Model | What it does |
 |---|---|---|
-| `action_generate` | card | assign a slug → creates the link + QR + reveals details |
-| `create_for_employees(employees)` | card | make a name-only card per employee (no duplicates) |
+| `action_publish` / `action_deactivate` / `action_set_draft` | card | workflow transitions (Publish assigns the slug → link + QR) |
+| `action_download_qr` / `action_update_from_employee` | card | download the QR PNG / re-sync details from the employee |
+| `create_for_employees(employees)` | card | make a name-only Draft card per employee (no duplicates) |
 | `_compute_contact` | card | the shown `contact_*` values (employee, overridden by card) |
 | `_compute_public_url` / `_compute_qr_code` | card | derive the link and QR from the slug |
 | `_build_vcard` | card | render the contact as a vCard 3.0 string |
@@ -263,9 +274,9 @@ don't need it.
 
 ## FAQ
 
-**Why do employees show with just a name and no link?** A card starts as a
-name-only placeholder. Select it and **Generate** (or use automatic mode) to
-create its link and QR.
+**Why do employees show with just a name and no link?** A card starts in
+**Draft** (name only). **Publish** it (or use automatic mode) to create its link
+and QR. **Deactivate** turns them back off.
 
 **Can it generate a QR code, or is the link fixed?** Both — once generated the
 link is fixed (`/card/<slug>`) and the QR encodes that link.
