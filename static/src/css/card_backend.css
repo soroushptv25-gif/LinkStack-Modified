@@ -1,0 +1,33 @@
+/* Business Card backend form: give the editable fields visible input boxes
+   (scoped to .dbc_form so no other Odoo form is affected). */
+.dbc_form .o_field_widget .o_input,
+.dbc_form .o_field_widget input.o_input,
+.dbc_form .o_field_widget textarea.o_input {
+    border: 1px solid #ced4da !important;
+    border-radius: 4px !important;
+    padding: 4px 8px !important;
+    background-color: #ffffff !important;
+}
+
+/* Many2one fields (Employee, Owner) render an inner input too. */
+.dbc_form .o_field_many2one_selection .o_input {
+    border: 1px solid #ced4da !important;
+    border-radius: 4px !important;
+    background-color: #ffffff !important;
+}
+
+/* Clear focus state. */
+.dbc_form .o_field_widget .o_input:focus {
+    border-color: #714B67 !important;
+    box-shadow: 0 0 0 0.15rem rgba(113, 75, 103, 0.25) !important;
+    outline: none !important;
+}
+
+/* Don't box the big title, the checkbox, or the status bar. */
+.dbc_form .oe_title .o_input,
+.dbc_form .o_field_boolean .o_input,
+.dbc_form .o_statusbar_status .o_input {
+    border: 0 !important;
+    box-shadow: none !important;
+    background-color: transparent !important;
+}

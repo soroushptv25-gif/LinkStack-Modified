@@ -25,7 +25,7 @@
         <field name="name">digital.business.card.form</field>
         <field name="model">digital.business.card</field>
         <field name="arch" type="xml">
-            <form string="Business Card">
+            <form string="Business Card" class="dbc_form">
                 <header>
                     <button name="action_publish" type="object" string="Publish"
                             class="btn-primary" invisible="state == 'published'"/>
