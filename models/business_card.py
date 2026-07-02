@@ -254,6 +254,15 @@ class DigitalBusinessCard(models.Model):
             'target': 'new',
         }
 
+    def action_open_public(self):
+        """Open the public card page in a new tab."""
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_url',
+            'url': self.public_url or '/',
+            'target': 'new',
+        }
+
     def _unique_slug(self, base):
         """Build a URL-safe, unique slug from a name."""
         import re
