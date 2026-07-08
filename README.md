@@ -169,7 +169,7 @@ When a card is linked to an employee, the shown values come from the employee:
 | Name | `name` |
 | Position / Title | `job_title` (falls back to `job_id`) |
 | Company | `company_id` |
-| Email | `work_email` |
+| Email | `work_email` by default — **configurable** (see below) |
 | Phone | `work_phone` (falls back to `mobile_phone`) |
 | Photo | `image_1920` |
 | Website | the employee's company website |
@@ -178,6 +178,26 @@ When a card is linked to an employee, the shown values come from the employee:
 edited on the card. A value entered there **overrides** the employee's; leave it
 blank to use the employee's live value. With no employee linked, the card just
 uses its own fields.
+
+### Choosing which employee email the card shows
+
+Odoo's `hr.employee` has two built-in email fields — **`work_email`** and
+**`private_email`** (there is no separate "business/second" email field). Which
+one feeds the card is controlled by a system parameter, so you can switch it
+without changing code:
+
+- **Parameter:** `digital_business_card.employee_email_field`
+- **Default:** `work_email` (the original behaviour)
+- Set it to **`private_email`** to show the private email instead — or to any
+  other `Char` email field on `hr.employee`.
+- If the chosen field is empty for an employee, the card falls back to
+  `work_email`. A per-card **Email** override always wins.
+
+Set it in **Settings → Technical → System Parameters** (or, if that menu is
+hidden, enable Developer Mode). To **revert to the original**, set the value
+back to `work_email` (or delete the parameter).
+
+> This instance is configured to use **`private_email`**.
 
 ---
 

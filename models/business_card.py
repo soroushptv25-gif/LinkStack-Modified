@@ -122,6 +122,7 @@ class DigitalBusinessCard(models.Model):
                  'website', 'photo',
                  'employee_id.name', 'employee_id.job_title', 'employee_id.job_id',
                  'employee_id.company_id', 'employee_id.work_email',
+                 'employee_id.private_email',
                  'employee_id.work_phone', 'employee_id.mobile_phone',
                  'employee_id.image_1920')
     def _compute_contact(self):
@@ -129,6 +130,13 @@ class DigitalBusinessCard(models.Model):
         # of the details only appear once the card is generated (has a slug).
         # For a generated card the override model applies: a value entered on the
         # card wins; when blank, the linked employee's live value is used.
+        #
+        # Which employee email feeds the card is configurable via the system
+        # parameter 'digital_business_card.employee_email_field' (default
+        # 'work_email'; e.g. set it to 'private_email' to use the private email).
+        # Falls back to work_email if the chosen field is empty/invalid.
+        email_field = self.env['ir.config_parameter'].sudo().get_param(
+            'digital_business_card.employee_email_field') or 'work_email'
         for card in self:
             emp = card.employee_id.sudo() if card.employee_id else False
             card.contact_name = card.name or (emp.name if emp else False)
@@ -138,9 +146,13 @@ class DigitalBusinessCard(models.Model):
                 card.contact_website = card.contact_image = False
                 continue
             emp_title = (emp.job_title or (emp.job_id.name or False)) if emp else False
+            emp_email = False
+            if emp:
+                chosen = emp[email_field] if email_field in emp._fields else False
+                emp_email = chosen or emp.work_email
             card.contact_job_title = card.job_title or emp_title
             card.contact_company = card.company or (emp.company_id.name if emp else False)
-            card.contact_email = card.email or (emp.work_email if emp else False)
+            card.contact_email = card.email or emp_email
             card.contact_phone = card.phone or (
                 (emp.work_phone or emp.mobile_phone) if emp else False)
             card.contact_website = card.website or (
