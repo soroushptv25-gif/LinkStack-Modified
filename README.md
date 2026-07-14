@@ -174,10 +174,19 @@ When a card is linked to an employee, the shown values come from the employee:
 | Photo | `image_1920` |
 | Website | the employee's company website |
 
-**Editable per card:** position, email, phone, company, website and photo can be
-edited on the card. A value entered there **overrides** the employee's; leave it
-blank to use the employee's live value. With no employee linked, the card just
-uses its own fields.
+**Main vs Mask (per-field override):** the card form's **Profile** tab has two
+sections, side by side, for position, company, email, phone, website and photo:
+
+- **Main — from Employee:** read-only, pulled **live** from the linked employee.
+  It updates automatically whenever the employee record changes.
+- **Mask — Custom:** editable and **empty by default** (never auto-filled).
+
+The card shows the **Mask** value when it is filled; when a mask is empty it
+shows the **Main** (employee) value. So the mask always has priority — and even
+if the employee's data changes, a card with a mask set keeps showing the mask
+(clear the mask to follow the employee again). The **Shown on the card** tab
+previews the resulting values. (Name uses the card's own **Full Name** as its
+mask, falling back to the employee's name.)
 
 ### Choosing which employee email the card shows
 

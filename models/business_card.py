@@ -45,21 +45,31 @@ class DigitalBusinessCard(models.Model):
         'hr.employee', string='Employee', ondelete='set null',
         help="When set, the card displays this employee's details (live).")
 
-    # Manual details — used as the card's own data, and as the fallback when no
-    # employee is linked.
-    job_title = fields.Char(string='Job Title')
-    company = fields.Char(string='Company')
-    email = fields.Char(string='Email')
-    phone = fields.Char(string='Phone')
-    website = fields.Char(string='Website')
     bio = fields.Text(string='Bio')
-    photo = fields.Binary(string='Photo', attachment=True)
 
-    # What actually gets shown on the card: the linked employee's data when
-    # present, otherwise the manual fields above. Computed (not stored) so they
-    # always reflect the current employee record. The employee is read with
-    # sudo() so a public visitor — who has no access to hr.employee — still
-    # sees the published contact details.
+    # --- MAIN fields: read LIVE from the linked employee (read-only). They
+    # auto-update whenever the employee record changes. Not stored. ---
+    main_name = fields.Char(string='Name (employee)', compute='_compute_main')
+    main_job_title = fields.Char(string='Position (employee)', compute='_compute_main')
+    main_company = fields.Char(string='Company (employee)', compute='_compute_main')
+    main_email = fields.Char(string='Email (employee)', compute='_compute_main')
+    main_phone = fields.Char(string='Phone (employee)', compute='_compute_main')
+    main_website = fields.Char(string='Website (employee)', compute='_compute_main')
+    main_photo = fields.Binary(string='Photo (employee)', compute='_compute_main')
+
+    # --- MASK fields: the user's own values. Editable, empty by default, never
+    # auto-filled. When a mask is set it OVERRIDES the employee value on the
+    # card; when empty the employee (main) value is shown instead. ---
+    mask_job_title = fields.Char(string='Position (mask)')
+    mask_company = fields.Char(string='Company (mask)')
+    mask_email = fields.Char(string='Email (mask)')
+    mask_phone = fields.Char(string='Phone (mask)')
+    mask_website = fields.Char(string='Website (mask)')
+    mask_photo = fields.Binary(string='Photo (mask)', attachment=True)
+
+    # What actually gets shown on the card = mask if set, else the employee
+    # (main) value. Computed (not stored). For name, the record's own `name`
+    # acts as the mask, falling back to the employee name.
     contact_name = fields.Char(string='Shown Name', compute='_compute_contact',
                                search='_search_contact_name')
     contact_job_title = fields.Char(string='Shown Title', compute='_compute_contact',
@@ -118,58 +128,73 @@ class DigitalBusinessCard(models.Model):
             live = card.slug and card.state == 'published'
             card.public_url = '%s/card/%s' % (base, card.slug) if live else False
 
-    @api.depends('slug', 'employee_id', 'name', 'job_title', 'company', 'email', 'phone',
-                 'website', 'photo',
+    @api.depends('employee_id',
                  'employee_id.name', 'employee_id.job_title', 'employee_id.job_id',
                  'employee_id.company_id', 'employee_id.work_email',
                  'employee_id.private_email',
                  'employee_id.work_phone', 'employee_id.mobile_phone',
                  'employee_id.image_1920')
-    def _compute_contact(self):
-        # The NAME always shows (that's the name-only placeholder row). The rest
-        # of the details only appear once the card is generated (has a slug).
-        # For a generated card the override model applies: a value entered on the
-        # card wins; when blank, the linked employee's live value is used.
+    def _compute_main(self):
+        # MAIN = the linked employee's live values (read-only). These update
+        # automatically whenever the employee record changes.
         #
         # Which employee email feeds the card is configurable via the system
         # parameter 'digital_business_card.employee_email_field' (default
-        # 'work_email'; e.g. set it to 'private_email' to use the private email).
-        # Falls back to work_email if the chosen field is empty/invalid.
+        # 'work_email'; set to 'private_email' to use the private email). Falls
+        # back to work_email if the chosen field is empty/invalid.
         email_field = self.env['ir.config_parameter'].sudo().get_param(
             'digital_business_card.employee_email_field') or 'work_email'
         for card in self:
             emp = card.employee_id.sudo() if card.employee_id else False
-            card.contact_name = card.name or (emp.name if emp else False)
+            if not emp:
+                card.main_name = card.main_job_title = card.main_company = False
+                card.main_email = card.main_phone = card.main_website = False
+                card.main_photo = False
+                continue
+            chosen = emp[email_field] if email_field in emp._fields else False
+            card.main_name = emp.name or False
+            card.main_job_title = emp.job_title or (emp.job_id.name or False)
+            card.main_company = emp.company_id.name or False
+            card.main_email = chosen or emp.work_email or False
+            card.main_phone = emp.work_phone or emp.mobile_phone or False
+            card.main_website = emp.company_id.website or False
+            card.main_photo = emp.image_1920 or False
+
+    @api.depends('slug', 'name',
+                 'main_name', 'main_job_title', 'main_company', 'main_email',
+                 'main_phone', 'main_website', 'main_photo',
+                 'mask_job_title', 'mask_company', 'mask_email', 'mask_phone',
+                 'mask_website', 'mask_photo')
+    def _compute_contact(self):
+        # Shown value = MASK if set, otherwise MAIN (employee). The mask always
+        # wins; only when it is empty do we fall back to the employee value.
+        # Name is special: the record's own `name` is its mask.
+        # Details other than the name only appear once the card is generated
+        # (has a slug) — a draft shows the name only.
+        for card in self:
+            card.contact_name = card.name or card.main_name
             if not card.slug:
                 card.contact_job_title = card.contact_company = False
                 card.contact_email = card.contact_phone = False
                 card.contact_website = card.contact_image = False
                 continue
-            emp_title = (emp.job_title or (emp.job_id.name or False)) if emp else False
-            emp_email = False
-            if emp:
-                chosen = emp[email_field] if email_field in emp._fields else False
-                emp_email = chosen or emp.work_email
-            card.contact_job_title = card.job_title or emp_title
-            card.contact_company = card.company or (emp.company_id.name if emp else False)
-            card.contact_email = card.email or emp_email
-            card.contact_phone = card.phone or (
-                (emp.work_phone or emp.mobile_phone) if emp else False)
-            card.contact_website = card.website or (
-                emp.company_id.website if emp else False)
-            card.contact_image = card.photo or (emp.image_1920 if emp else False)
+            card.contact_job_title = card.mask_job_title or card.main_job_title
+            card.contact_company = card.mask_company or card.main_company
+            card.contact_email = card.mask_email or card.main_email
+            card.contact_phone = card.mask_phone or card.main_phone
+            card.contact_website = card.mask_website or card.main_website
+            card.contact_image = card.mask_photo or card.main_photo
 
-    # Make the shown values searchable: match the card's own field OR the
-    # linked employee's, so the search box finds either source.
+    # Make the shown values searchable: match the mask value OR the employee's.
     def _search_contact_name(self, operator, value):
         return ['|', ('name', operator, value), ('employee_id.name', operator, value)]
 
     def _search_contact_company(self, operator, value):
-        return ['|', ('company', operator, value),
+        return ['|', ('mask_company', operator, value),
                 ('employee_id.company_id.name', operator, value)]
 
     def _search_contact_job_title(self, operator, value):
-        return ['|', '|', ('job_title', operator, value),
+        return ['|', '|', ('mask_job_title', operator, value),
                 ('employee_id.job_title', operator, value),
                 ('employee_id.job_id.name', operator, value)]
 
