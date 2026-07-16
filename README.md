@@ -6,11 +6,9 @@ A native **Odoo 17** module for shareable **digital business cards** — the
 
 LinkStack itself is a PHP/Laravel app and **cannot** be dropped into Odoo (Odoo
 is Python). This module re-implements the concept natively in Python + XML +
-QWeb, and wires it into the **Employees** app so a card can show an employee's
-details. It also adds two integrations LinkStack doesn't have:
-
-1. **Import** people (stored as HTML) from an external **PostgreSQL** database.
-2. **Publish** selected cards to a **3rd-party web host**.
+QWeb, and wires it into the **Employees** app — which is the single source the
+cards read their data from. It also adds something LinkStack doesn't have:
+**publishing** selected cards to a **3rd-party web host**.
 
 Each card follows a simple workflow — **Draft → Published → Deactivated**. Once
 **published**, it gets a **permanent public link** (`/card/<slug>`), an
@@ -26,7 +24,6 @@ Deactivating switches the link and QR back off.
 - [Quick start](#quick-start)
 - [How the module works](#how-the-module-works)
 - [Employees & generating cards](#employees--generating-cards)
-- [Importing from a database](#importing-from-a-database)
 - [Publishing to a 3rd-party host](#publishing-to-a-3rd-party-host)
 - [Reference](#reference)
 - [FAQ](#faq)
@@ -42,8 +39,6 @@ Deactivating switches the link and QR back off.
 | **Kanban & list** views, plus **search / filters** (by status, name, company, position) and group-by | **Business Cards → Cards** |
 | A card **linked to an HR employee** — details pulled live, editable per card | the card's **Employee** field |
 | Permanent public card page + QR + vCard | `http://<your-odoo>/card/<slug>` |
-| Manual **or** automatic card generation | **Business Cards → Card Generation** *(admin)* |
-| Import people from an external **PostgreSQL** database | **Business Cards → Data Sources** *(admin)* |
 | Publish selected cards to a 3rd-party host | **Cards → Actions ▾ → Publish to Web** |
 | Define where to publish | **Business Cards → Publish Targets** *(admin)* |
 
@@ -74,8 +69,8 @@ docker compose start odoo
 
 **Requirements:** Odoo 17, depends on `base`, `web` and `hr` (the Employees app
 — installed automatically). Everything else ships with Odoo: QR codes use the
-built-in barcode engine, the PostgreSQL import uses `psycopg2`, and publishing
-uses `requests`. Nothing extra to install.
+built-in barcode engine and publishing uses `requests`. Nothing extra to
+install.
 
 ---
 
@@ -107,7 +102,6 @@ uses `requests`. Nothing extra to install.
               │  source_html                   │
               │  → public_url, qr_code         │
               └───────────────────────────────┘
-        external PostgreSQL ─▶ Data Source (import) ─▶ (creates/updates cards)
                          │
    /card/<slug>  ◀───────┤ public QWeb page (auth: public) + /card/<slug>/vcard
                          │
@@ -156,11 +150,8 @@ the public card page, never the Employees app.
 From the **Employees** app: tick people → **Actions (gear) → Create Business
 Card** creates + publishes in one step.
 
-**Manual vs automatic** — **Business Cards → Card Generation** *(admin)*:
-- **Manual (default):** employees appear as Draft (name-only); you publish on demand.
-- **Automatic:** turn on *Automatically generate employee cards* and pick the
-  scope (future employees only, or all existing now) so new employees are
-  **published** immediately.
+Every new employee automatically gets a **Draft** (name-only) card, so nobody is
+missed. Publishing is always a deliberate step — there is no auto-publish.
 
 When a card is linked to an employee, the shown values come from the employee:
 
@@ -210,29 +201,6 @@ back to `work_email` (or delete the parameter).
 
 ---
 
-## Importing from a database
-
-Import people from an external **PostgreSQL** database whose rows contain an
-HTML body. Go to **Business Cards → Data Sources → New** *(admin)* and fill in:
-
-| Field | Example | Meaning |
-|---|---|---|
-| Host | `db` or `203.0.113.10` | DB server hostname/IP |
-| Port | `5432` | PostgreSQL port |
-| Database | `linkstack` | database name |
-| Username / Password | `reader` / `••••` | credentials (read access is enough) |
-| Table | `people` | table with one person per row |
-| Key/Slug Column | `handle` | becomes the card's unique slug |
-| HTML Column | `body` | the person's HTML |
-| Name Column *(optional)* | `fullname` | display name (falls back to the slug) |
-| Max Rows | `100` | how many rows to read per import |
-
-Then click **Test Connection**, and **Import Cards** — it reads the rows and
-**creates or updates** a card per row (matched by slug, so re-importing
-refreshes existing cards). The import only ever reads from the source database.
-
----
-
 ## Publishing to a 3rd-party host
 
 Your cards live inside Odoo at `/card/<slug>`. Publishing lets you *also* push
@@ -272,10 +240,8 @@ don't need it.
 | Model | File | Purpose |
 |---|---|---|
 | `digital.business.card` | `models/business_card.py` | the card; link, QR, vCard |
-| `digital.business.card.source` | `models/business_card_source.py` | PostgreSQL import config |
 | `digital.business.card.target` | `models/business_card_target.py` | publish destination |
 | `digital.business.card.publish.wizard` | `models/business_card_target.py` | "Publish to Web" dialog |
-| `digital.business.card.config.wizard` | `models/dbc_config_wizard.py` | manual/automatic generation setting |
 | `hr.employee` (extended) | `models/hr_employee.py` | placeholder card per employee |
 | *(helpers)* | `models/net_utils.py` | shared URL/size helpers |
 
@@ -290,7 +256,6 @@ don't need it.
 | `_compute_public_url` / `_compute_qr_code` | card | derive the link and QR from the slug |
 | `_build_vcard` | card | render the contact as a vCard 3.0 string |
 | `create_card_from_html_file(path, vals)` | card | **dormant** — build a card from a local HTML file (not wired up) |
-| `action_test_connection` / `action_import_cards` | source | test / import from PostgreSQL |
 | `_publish_cards(cards)` | target | POST/PUT each card to the host |
 
 ### Public routes
@@ -314,8 +279,8 @@ link is fixed (`/card/<slug>`) and the QR encodes that link.
 **Where is the QR shown?** On the card record inside Odoo. It's deliberately not
 on the public page (scanning it would just reopen the same page).
 
-**Can normal users configure imports or publishing?** No — Data Sources, Publish
-Targets and Card Generation are admin-only. Regular users manage their own cards.
+**Can normal users configure publishing?** No — Publish Targets are admin-only.
+Regular users manage their own cards.
 
 **What about `create_card_from_html_file`?** It exists but is intentionally
 dormant (not called anywhere) — a starting point if you later want to build

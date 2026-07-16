@@ -11,14 +11,6 @@
               action="action_dbc"
               sequence="10"/>
 
-    <!-- Data sources hold server credentials, so admins only. -->
-    <menuitem id="menu_dbc_sources"
-              name="Data Sources"
-              parent="menu_dbc_root"
-              action="action_dbc_source"
-              groups="base.group_system"
-              sequence="20"/>
-
     <!-- Publish targets hold upload credentials, so admins only. -->
     <menuitem id="menu_dbc_targets"
               name="Publish Targets"
@@ -26,13 +18,5 @@
               action="action_dbc_target"
               groups="base.group_system"
               sequence="30"/>
-
-    <!-- Manual/automatic generation settings, admins only. -->
-    <menuitem id="menu_dbc_config"
-              name="Card Generation"
-              parent="menu_dbc_root"
-              action="action_dbc_config"
-              groups="base.group_system"
-              sequence="40"/>
 
 </odoo>

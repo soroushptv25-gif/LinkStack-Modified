@@ -30,12 +30,9 @@ up to any button, route or cron yet.
     'data': [
         'security/ir.model.access.csv',
         'security/business_card_rules.xml',
-        'data/dbc_config_data.xml',
         'views/business_card_templates.xml',
         'views/business_card_views.xml',
-        'views/business_card_source_views.xml',
         'views/business_card_target_views.xml',
-        'views/dbc_config_wizard_views.xml',
         'views/hr_employee_actions.xml',
         'views/business_card_menus.xml',
     ],
