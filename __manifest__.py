@@ -1,6 +1,6 @@
 {
     'name': 'Digital Business Card',
-    'version': '17.0.1.2.0',
+    'version': '17.0.1.3.0',
     'category': 'Marketing',
     'summary': 'Shareable digital business cards with a permanent link and an auto-generated QR code.',
     'description': """
@@ -34,6 +34,7 @@ up to any button, route or cron yet.
         'views/business_card_views.xml',
         'views/business_card_target_views.xml',
         'views/hr_employee_actions.xml',
+        'views/res_config_settings_views.xml',
         'views/business_card_menus.xml',
     ],
     'assets': {

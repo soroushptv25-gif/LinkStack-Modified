@@ -11,7 +11,7 @@
                 <link rel="stylesheet" type="text/css"
                       href="/digital_business_card/static/src/css/card.css"/>
             </head>
-            <body>
+            <body t-attf-class="dbc-theme-#{card.card_template or 'classic'}">
                 <t t-if="card.source_html">
                     <!-- Card built from imported HTML: render exactly as given. -->
                     <t t-out="card.source_html"/>
@@ -38,7 +38,7 @@
                                🌐 <t t-out="card.contact_website"/></a>
                         </div>
 
-                        <a class="dbc-link dbc-vcard" t-attf-href="/card/#{card.slug}/vcard">
+                        <a class="dbc-link dbc-vcard" t-attf-href="/card/#{card.access_token}/vcard">
                            👤 Import to contact</a>
                     </div>
                 </t>

@@ -11,9 +11,10 @@ cards read their data from. It also adds something LinkStack doesn't have:
 **publishing** selected cards to a **3rd-party web host**.
 
 Each card follows a simple workflow — **Draft → Published → Deactivated**. Once
-**published**, it gets a **permanent public link** (`/card/<slug>`), an
-**auto-generated QR code**, and an **"Import to contact"** vCard download.
-Deactivating switches the link and QR back off.
+**published**, it gets a **permanent public link** (`/card/<token>`), an
+**auto-generated QR code** at an **unguessable hash URL** (`/card/<token>`), and
+an **"Import to contact"** vCard download. Deactivating switches the link and QR
+back off (the page 404s). Cards can use different **public-page designs**.
 
 ---
 
@@ -38,7 +39,9 @@ Deactivating switches the link and QR back off.
 | Card **workflow**: Draft → Published → Deactivated (deactivate switches the link/QR off) | card form buttons |
 | **Kanban & list** views, plus **search / filters** (by status, name, company, position) and group-by | **Business Cards → Cards** |
 | A card **linked to an HR employee** — details pulled live, editable per card | the card's **Employee** field |
-| Permanent public card page + QR + vCard | `http://<your-odoo>/card/<slug>` |
+| Permanent public card page + QR + vCard at an **unguessable hash URL** | `http://<your-odoo>/card/<token>` |
+| **Public-page designs** (Classic / Dark / Minimal), per card or a default | card **Public Page Design** / **Settings** |
+| **Settings** (email source, default design) | **Business Cards → Configuration → Settings** *(admin)* |
 | Publish selected cards to a 3rd-party host | **Cards → Actions ▾ → Publish to Web** |
 | Define where to publish | **Business Cards → Publish Targets** *(admin)* |
 
@@ -79,7 +82,7 @@ install.
 1. Open **Business Cards → Cards**. You'll see **one row per employee** — a
    **Draft** card showing the **name only** (greyed out, no link, no QR).
 2. Open a card and click **Publish** (top-left). It gets a **link + QR** and its
-   details appear. Open `http://<your-odoo>/card/<slug>` or **Download QR**.
+   details appear. Open `http://<your-odoo>/card/<token>` or **Download QR**.
 3. To switch a card off, click **Deactivate** — the link/QR stop working (the
    page 404s). **Publish** again to bring it back (same link).
 4. Fast path from the Employees app: tick people → **Actions (gear) → Create
@@ -103,7 +106,7 @@ install.
               │  → public_url, qr_code         │
               └───────────────────────────────┘
                          │
-   /card/<slug>  ◀───────┤ public QWeb page (auth: public) + /card/<slug>/vcard
+   /card/<token>  ◀───────┤ public QWeb page (auth: public) + /card/<token>/vcard
                          │
    3rd-party host ◀──────┘ Publish Target (Actions ▸ Publish to Web)
 ```
@@ -112,21 +115,22 @@ install.
   placeholder**; the `slug` (and therefore the link/QR) is empty until you
   **generate** it.
 - **`generated`** is `True` once a slug exists.
-- **`public_url`** = `web.base.url` + `/card/<slug>` (empty until generated).
+- **`public_url`** = `web.base.url` + `/card/<token>` (empty until published).
 - **`qr_code`** is computed from `public_url`, so it always matches the link. It
   is shown on the **card record in Odoo** (the public page itself is kept clean —
   scanning a QR just reopens the same page).
 - **`source_html`** — an optional HTML body; when set, the public page renders it
   instead of the built-in layout (it is sanitized on save).
-- The public page (`/card/<slug>`) is **public** (no login) and standalone —
+- The public page (`/card/<token>`) is **public** (no login) and standalone —
   visitors never reach the Odoo backend from it. It is read with `sudo()`.
 
 ### Link, QR & vCard
-- **Fixed link:** `/card/<slug>` — permanent once generated. Ready to share,
-  print, or **write to an NFC tag**.
+- **Fixed link:** `/card/<token>` — a random, **unguessable** hash (so cards
+  can't be found by guessing names). Permanent once published; ready to share,
+  print, or **write to an NFC tag**. The readable `slug` is a backend-only key.
 - **QR code:** auto-generated, encodes that link, shown on the card form.
 - **Import to contact:** the public page has a button that downloads the person
-  as a **vCard (.vcf)** (`/card/<slug>/vcard`) to save into phone contacts.
+  as a **vCard (.vcf)** (`/card/<token>/vcard`) to save into phone contacts.
 
 ---
 
@@ -203,7 +207,7 @@ back to `work_email` (or delete the parameter).
 
 ## Publishing to a 3rd-party host
 
-Your cards live inside Odoo at `/card/<slug>`. Publishing lets you *also* push
+Your cards live inside Odoo at `/card/<token>`. Publishing lets you *also* push
 selected cards to an **external website/API** that stores and serves them.
 
 1. **Business Cards → Publish Targets → New** *(admin)* — define a destination:
@@ -228,7 +232,7 @@ payload per card looks like:
   "html": "<full rendered card page>", "qr_png_base64": "iVBORw0KGgo..." }
 ```
 
-This is optional — if people just open/scan the Odoo `/card/<slug>` link, you
+This is optional — if people just open/scan the Odoo `/card/<token>` link, you
 don't need it.
 
 ---
@@ -262,8 +266,8 @@ don't need it.
 
 | Route | Auth | Serves |
 |---|---|---|
-| `GET /card/<slug>` | public | the public card page |
-| `GET /card/<slug>/vcard` | public | the `.vcf` download ("Import to contact") |
+| `GET /card/<token>` | public | the public card page |
+| `GET /card/<token>/vcard` | public | the `.vcf` download ("Import to contact") |
 
 ---
 
@@ -274,7 +278,15 @@ don't need it.
 and QR. **Deactivate** turns them back off.
 
 **Can it generate a QR code, or is the link fixed?** Both — once generated the
-link is fixed (`/card/<slug>`) and the QR encodes that link.
+link is fixed (`/card/<token>`) and the QR encodes that link.
+
+**If I deactivate a card, does its QR still work?** No — a deactivated (or draft)
+card returns **404** at its URL, so a printed/scanned QR stops working. Publish
+it again (the same token is reused) to bring it back.
+
+**Can I change the public page design?** Yes — pick **Public Page Design**
+(Classic / Dark / Minimal) on the card, or set the default in
+**Configuration → Settings**.
 
 **Where is the QR shown?** On the card record inside Odoo. It's deliberately not
 on the public page (scanning it would just reopen the same page).

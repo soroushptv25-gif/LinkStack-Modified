@@ -75,3 +75,42 @@ body {
     margin-top: 20px;
     text-align: center;
 }
+
+/* ===== Public page designs (themes) ===== */
+
+/* Dark: charcoal page, light card text, accent buttons. */
+.dbc-theme-dark {
+    background: #0f172a;
+    color: #e5e7eb;
+}
+.dbc-theme-dark .dbc-card {
+    background: #1e293b;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+.dbc-theme-dark .dbc-role { color: #94a3b8; }
+.dbc-theme-dark .dbc-link {
+    background: #6366f1;
+}
+
+/* Minimal: no card chrome, thin outlined buttons, flat page. */
+.dbc-theme-minimal {
+    background: #ffffff;
+    color: #111827;
+}
+.dbc-theme-minimal .dbc-card {
+    box-shadow: none;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+}
+.dbc-theme-minimal .dbc-photo {
+    border-radius: 8px;
+}
+.dbc-theme-minimal .dbc-link {
+    background: transparent;
+    color: #111827;
+    border: 1px solid #d1d5db;
+}
+.dbc-theme-minimal .dbc-link:hover {
+    background: #f9fafb;
+    opacity: 1;
+}

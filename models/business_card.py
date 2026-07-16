@@ -2,6 +2,7 @@
 import base64
 import logging
 import os
+import uuid
 
 from odoo import api, fields, models
 from odoo.exceptions import UserError
@@ -20,8 +21,16 @@ class DigitalBusinessCard(models.Model):
     # in the list by name only until then. Unique + copy=False.
     slug = fields.Char(
         string='Card Link', copy=False, index=True,
-        help="URL-safe handle, assigned when the card is generated. "
-             "The public card is then served at /card/<slug>.")
+        help="Human-readable internal handle (from the name). The PUBLIC url "
+             "uses the unguessable access token, not this.")
+    # The public page is served at /card/<access_token> — a random, unguessable
+    # hash so cards can't be enumerated by guessing names. Generated on publish.
+    access_token = fields.Char(
+        string='Access Token', copy=False, index=True, readonly=True)
+    # Which design the public page uses.
+    card_template = fields.Selection(
+        [('classic', 'Classic'), ('dark', 'Dark'), ('minimal', 'Minimal')],
+        string='Public Page Design', default=lambda self: self._default_template())
     # True once a link/QR has been generated (i.e. a slug exists). Stored so the
     # list can distinguish name-only rows from generated cards.
     generated = fields.Boolean(
@@ -119,14 +128,20 @@ class DigitalBusinessCard(models.Model):
         for card in self:
             card.generated = bool(card.slug)
 
-    @api.depends('slug', 'state')
+    @api.model
+    def _default_template(self):
+        return self.env['ir.config_parameter'].sudo().get_param(
+            'digital_business_card.default_template') or 'classic'
+
+    @api.depends('access_token', 'state')
     def _compute_public_url(self):
-        # The link only exists while the card is PUBLISHED. Deactivating (or
-        # reverting to draft) blanks the link and QR — the public page 404s.
+        # The link only exists while the card is PUBLISHED, and it uses the
+        # unguessable access token (a hash), never the readable slug.
+        # Deactivating (or reverting to draft) blanks the link and QR — 404.
         base = self.env['ir.config_parameter'].sudo().get_param('web.base.url') or ''
         for card in self:
-            live = card.slug and card.state == 'published'
-            card.public_url = '%s/card/%s' % (base, card.slug) if live else False
+            live = card.access_token and card.state == 'published'
+            card.public_url = '%s/card/%s' % (base, card.access_token) if live else False
 
     @api.depends('employee_id',
                  'employee_id.name', 'employee_id.job_title', 'employee_id.job_id',
@@ -248,12 +263,15 @@ class DigitalBusinessCard(models.Model):
     # Workflow: draft -> published -> deactivated
     # ------------------------------------------------------------------
     def action_publish(self):
-        """Draft/Deactivated -> Published: assign a slug if missing (creating
-        the link + QR) and go live."""
+        """Draft/Deactivated -> Published: assign a readable slug + an
+        unguessable access token (the public hash URL) if missing, then go live.
+        The token is reused across re-publish so a printed QR keeps working."""
         for card in self:
             if not card.slug:
                 base = card.name or (card.employee_id.name if card.employee_id else 'card')
                 card.slug = self._unique_slug(base)
+            if not card.access_token:
+                card.access_token = uuid.uuid4().hex
         self.write({'state': 'published'})
         return True
 

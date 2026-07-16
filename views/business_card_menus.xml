@@ -19,4 +19,17 @@
               groups="base.group_system"
               sequence="30"/>
 
+    <!-- Configuration > Settings (admins only). -->
+    <menuitem id="menu_dbc_config"
+              name="Configuration"
+              parent="menu_dbc_root"
+              groups="base.group_system"
+              sequence="90"/>
+    <menuitem id="menu_dbc_settings"
+              name="Settings"
+              parent="menu_dbc_config"
+              action="action_dbc_settings"
+              groups="base.group_system"
+              sequence="10"/>
+
 </odoo>
