@@ -119,8 +119,10 @@ install.
 - **`qr_code`** is computed from `public_url`, so it always matches the link. It
   is shown on the **card record in Odoo** (the public page itself is kept clean —
   scanning a QR just reopens the same page).
-- **`source_html`** — an optional HTML body; when set, the public page renders it
-  instead of the built-in layout (it is sanitized on save).
+- **`source_html`** — the **Design** tab: edit the public page with Odoo's visual
+  HTML editor (toolbar + `/` block menu — headings, images, tables, columns…).
+  When set, it replaces the built-in card layout (and theme) on the public page.
+  Sanitized on save (scripts stripped).
 - The public page (`/card/<token>`) is **public** (no login) and standalone —
   visitors never reach the Odoo backend from it. It is read with `sudo()`.
 
@@ -284,9 +286,12 @@ link is fixed (`/card/<token>`) and the QR encodes that link.
 card returns **404** at its URL, so a printed/scanned QR stops working. Publish
 it again (the same token is reused) to bring it back.
 
-**Can I change the public page design?** Yes — pick **Public Page Design**
-(Classic / Dark / Minimal) on the card, or set the default in
-**Configuration → Settings**.
+**Can I change the public page design?** Two ways: (1) pick a **Public Page
+Design** (Classic / Dark / Minimal) on the card, or set the default in
+**Configuration → Settings**; (2) for a fully custom page, use the **Design** tab
+— Odoo's visual editor (toolbar + `/` block menu). Content there replaces the
+built-in layout. *(Note: images added in the editor may need to be marked public
+to show for anonymous visitors.)*
 
 **Where is the QR shown?** On the card record inside Odoo. It's deliberately not
 on the public page (scanning it would just reopen the same page).

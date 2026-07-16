@@ -153,9 +153,17 @@
                         <page string="Bio" name="bio">
                             <field name="bio" placeholder="A short introduction…"/>
                         </page>
-                        <page string="Custom HTML" name="html">
-                            <field name="source_html"
-                                   placeholder="Optional. When set, the public page renders this HTML verbatim."/>
+                        <page string="Design" name="design">
+                            <div class="text-muted mb-2">
+                                <i class="fa fa-info-circle me-1"/>Design the public page
+                                yourself with the toolbar and the <b>/</b> menu (headings,
+                                images, tables, columns, quotes…). Anything here
+                                <b>replaces</b> the built-in card layout and the theme.
+                                Leave it empty to keep the standard card.
+                            </div>
+                            <field name="source_html" widget="html" nolabel="1"
+                                   options="{'resizable': true, 'height': 500}"
+                                   placeholder="Start typing, or press / to insert a block…"/>
                         </page>
                     </notebook>
                 </sheet>
