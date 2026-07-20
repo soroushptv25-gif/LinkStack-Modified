@@ -155,9 +155,9 @@
                         </page>
                         <page string="Design" name="design">
                             <div class="text-muted mb-2">
-                                <i class="fa fa-info-circle me-1"/>Start from a <b>preset</b>
-                                below and edit it live with the toolbar and the <b>/</b>
-                                menu — or leave it empty and design your own. Whatever is
+                                <i class="fa fa-info-circle me-1"/>Design the public page:
+                                start from a <b>preset</b>, <b>upload an HTML file</b>, or
+                                write/edit it below (toolbar + <b>/</b> menu). Whatever is
                                 here <b>replaces</b> the built-in card layout and theme.
                             </div>
                             <div class="mb-3">
@@ -174,9 +174,21 @@
                                         string="Design from scratch" class="btn btn-link"
                                         confirm="Clear the design?"/>
                             </div>
+                            <group string="Design from an HTML file">
+                                <div class="d-flex align-items-center gap-2">
+                                    <field name="html_file" filename="html_filename"
+                                           widget="binary" nolabel="1"/>
+                                    <field name="html_filename" invisible="1"/>
+                                    <button name="action_load_html_file" type="object"
+                                            string="Load into design" class="btn btn-secondary"
+                                            invisible="not html_file"
+                                            confirm="Replace the current design with this file's HTML?"/>
+                                </div>
+                            </group>
+                            <separator string="Design content (edit or write HTML)"/>
                             <field name="source_html" widget="html" nolabel="1"
                                    options="{'resizable': true, 'height': 500}"
-                                   placeholder="Start typing, or press / to insert a block…"/>
+                                   placeholder="Start typing, press / for blocks, or use the code view (&lt;/&gt;) to write HTML…"/>
                         </page>
                     </notebook>
                 </sheet>

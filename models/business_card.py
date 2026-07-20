@@ -99,6 +99,9 @@ class DigitalBusinessCard(models.Model):
     source_html = fields.Html(
         string='Custom HTML', sanitize=True, sanitize_attributes=True,
         strip_style=False, strip_classes=False)
+    # Upload an .html file and load it into the design above.
+    html_file = fields.Binary(string='HTML File', attachment=True)
+    html_filename = fields.Char(string='HTML File Name')
 
     # Permanent public link + the QR code that points at it. Each card has its
     # own unique link/QR — share it, print the QR, or write the URL to an NFC
@@ -341,6 +344,25 @@ class DigitalBusinessCard(models.Model):
         for card in self:
             card.source_html = False
         return True
+
+    def action_load_html_file(self):
+        """Load an uploaded .html file into the public-page design. The content
+        goes through source_html, which is sanitized on write (scripts stripped,
+        layout kept), so it's safe to show on the public page."""
+        self.ensure_one()
+        if not self.html_file:
+            raise UserError("Upload an HTML file first.")
+        try:
+            content = base64.b64decode(self.html_file).decode('utf-8', 'replace')
+        except Exception as e:
+            raise UserError("Could not read the HTML file: %s" % e)
+        self.source_html = content
+        return {
+            'type': 'ir.actions.client', 'tag': 'display_notification',
+            'params': {'title': 'Loaded',
+                       'message': 'The HTML file is now the public-page design.',
+                       'type': 'success', 'sticky': False},
+        }
 
     def _preset_values(self):
         """Data for the presets — masks override the employee, ungated by state

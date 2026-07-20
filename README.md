@@ -119,10 +119,12 @@ install.
 - **`qr_code`** is computed from `public_url`, so it always matches the link. It
   is shown on the **card record in Odoo** (the public page itself is kept clean —
   scanning a QR just reopens the same page).
-- **`source_html`** — the **Design** tab: edit the public page with Odoo's visual
-  HTML editor (toolbar + `/` block menu — headings, images, tables, columns…).
-  When set, it replaces the built-in card layout (and theme) on the public page.
-  Sanitized on save (scripts stripped).
+- **`source_html`** — the **Design** tab: design the public page three ways —
+  start from a **preset**, **upload an HTML file** ("Load into design"), or
+  write/edit it in the visual editor (toolbar + `/` block menu). When set, it
+  replaces the built-in card layout (and theme). Sanitized on save: **inline
+  styles are kept; `<script>` and `<style>` blocks are stripped** — so use
+  **inline styles** in HTML files.
 - The public page (`/card/<token>`) is **public** (no login) and standalone —
   visitors never reach the Odoo backend from it. It is read with `sudo()`.
 
