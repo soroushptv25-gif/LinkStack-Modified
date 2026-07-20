@@ -11,15 +11,15 @@
                 <link rel="stylesheet" type="text/css"
                       href="/digital_business_card/static/src/css/card.css"/>
                 <!-- When the owner designed a custom page, pull Odoo's frontend
-                     CSS so editor blocks (columns, spacing, etc.) render right. -->
-                <t t-if="card.source_html">
+                     CSS so builder blocks (columns, spacing, etc.) render right. -->
+                <t t-if="design_html">
                     <t t-call-assets="web.assets_frontend" t-js="false"/>
                 </t>
             </head>
             <body t-attf-class="dbc-theme-#{card.card_template or 'classic'}">
-                <t t-if="card.source_html">
-                    <!-- Card built from imported HTML: render exactly as given. -->
-                    <t t-out="card.source_html"/>
+                <t t-if="design_html">
+                    <!-- Custom design (sanitized in the controller before render). -->
+                    <t t-out="design_html"/>
                 </t>
                 <t t-else="">
                     <div class="dbc-card">

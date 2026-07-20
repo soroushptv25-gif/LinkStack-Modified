@@ -174,9 +174,15 @@
                                         string="Design from scratch" class="btn btn-link"
                                         confirm="Clear the design?"/>
                             </div>
-                            <field name="source_html" widget="html" nolabel="1"
-                                   options="{'resizable': true, 'height': 500}"
-                                   placeholder="Start typing, or press / to insert a block…"/>
+                            <field name="source_html" widget="mass_mailing_html" nolabel="1"
+                                   iframeHtmlClass="o_mass_mailing_iframe"
+                                   options="{
+                                       'snippets': 'mass_mailing.email_designer_snippets',
+                                       'cssEdit': 'mass_mailing.iframe_css_assets_edit',
+                                       'inline-field': 'source_html_inline',
+                                       'cssReadonly': 'mass_mailing.iframe_css_assets_edit'
+                                   }"/>
+                            <field name="source_html_inline" invisible="1"/>
                         </page>
                     </notebook>
                 </sheet>
