@@ -288,9 +288,10 @@ it again (the same token is reused) to bring it back.
 
 **Can I change the public page design?** Two ways: (1) pick a **Public Page
 Design** (Classic / Dark / Minimal) on the card, or set the default in
-**Configuration → Settings**; (2) for a fully custom page, use the **Design** tab
-— Odoo's visual editor (toolbar + `/` block menu). Content there replaces the
-built-in layout. *(Note: images added in the editor may need to be marked public
+**Configuration → Settings**; (2) the **Design** tab — start from a **preset** (Card / Banner / Split,
+personalised with the card's data) or design your own, edited live with Odoo's
+visual editor (toolbar + `/` block menu). Content there replaces the built-in
+layout. *(Note: images added in the editor may need to be marked public
 to show for anonymous visitors.)*
 
 **Where is the QR shown?** On the card record inside Odoo. It's deliberately not

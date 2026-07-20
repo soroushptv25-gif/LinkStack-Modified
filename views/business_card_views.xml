@@ -155,11 +155,24 @@
                         </page>
                         <page string="Design" name="design">
                             <div class="text-muted mb-2">
-                                <i class="fa fa-info-circle me-1"/>Design the public page
-                                yourself with the toolbar and the <b>/</b> menu (headings,
-                                images, tables, columns, quotes…). Anything here
-                                <b>replaces</b> the built-in card layout and the theme.
-                                Leave it empty to keep the standard card.
+                                <i class="fa fa-info-circle me-1"/>Start from a <b>preset</b>
+                                below and edit it live with the toolbar and the <b>/</b>
+                                menu — or leave it empty and design your own. Whatever is
+                                here <b>replaces</b> the built-in card layout and theme.
+                            </div>
+                            <div class="mb-3">
+                                <button name="action_preset_card" type="object"
+                                        string="Preset: Card" class="btn btn-secondary me-1"
+                                        confirm="Load the Card preset? This replaces the current design."/>
+                                <button name="action_preset_banner" type="object"
+                                        string="Preset: Banner" class="btn btn-secondary me-1"
+                                        confirm="Load the Banner preset? This replaces the current design."/>
+                                <button name="action_preset_split" type="object"
+                                        string="Preset: Split" class="btn btn-secondary me-1"
+                                        confirm="Load the Split preset? This replaces the current design."/>
+                                <button name="action_preset_clear" type="object"
+                                        string="Design from scratch" class="btn btn-link"
+                                        confirm="Clear the design?"/>
                             </div>
                             <field name="source_html" widget="html" nolabel="1"
                                    options="{'resizable': true, 'height': 500}"

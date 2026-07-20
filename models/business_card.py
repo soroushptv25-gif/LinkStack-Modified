@@ -318,6 +318,95 @@ class DigitalBusinessCard(models.Model):
             'target': 'new',
         }
 
+    # ------------------------------------------------------------------
+    # Public-page design presets. Each loads a ready-made, personalised HTML
+    # layout into the Design tab (source_html); the user then edits it live.
+    # ------------------------------------------------------------------
+    def action_preset_card(self):
+        for card in self:
+            card.source_html = card._preset_html('card')
+        return True
+
+    def action_preset_banner(self):
+        for card in self:
+            card.source_html = card._preset_html('banner')
+        return True
+
+    def action_preset_split(self):
+        for card in self:
+            card.source_html = card._preset_html('split')
+        return True
+
+    def action_preset_clear(self):
+        for card in self:
+            card.source_html = False
+        return True
+
+    def _preset_values(self):
+        """Data for the presets — masks override the employee, ungated by state
+        so presets work in Draft too."""
+        from markupsafe import escape
+        website = self.mask_website or self.main_website or ''
+        if website and not website.lower().startswith(('http://', 'https://')):
+            website = 'https://' + website
+        return {
+            'img': '/web/image/digital.business.card/%s/contact_image' % (self.id or 0),
+            'name': escape(self.name or self.main_name or 'Your Name'),
+            'title': escape(self.mask_job_title or self.main_job_title or 'Job Title'),
+            'company': escape(self.mask_company or self.main_company or 'Company'),
+            'email': escape(self.mask_email or self.main_email or 'name@company.com'),
+            'phone': escape(self.mask_phone or self.main_phone or '+1 000 000 0000'),
+            'website': escape(website),
+        }
+
+    def _preset_html(self, kind):
+        self.ensure_one()
+        v = self._preset_values()
+        if kind == 'banner':
+            return (
+                '<div style="max-width:520px;margin:0 auto;font-family:sans-serif;'
+                'box-shadow:0 10px 30px rgba(0,0,0,.1);border-radius:16px;overflow:hidden;">'
+                '<div style="background:linear-gradient(135deg,#6366f1,#8b5cf6);'
+                'color:#fff;padding:44px 24px;text-align:center;">'
+                '<img src="%(img)s" style="width:110px;height:110px;border-radius:50%%;'
+                'object-fit:cover;border:4px solid rgba(255,255,255,.4);"/>'
+                '<h1 style="margin:14px 0 4px;">%(name)s</h1>'
+                '<p style="margin:0;opacity:.9;">%(title)s</p></div>'
+                '<div style="padding:24px;background:#fff;text-align:center;color:#374151;">'
+                '<p style="font-weight:600;margin:0 0 12px;">%(company)s</p>'
+                '<p style="margin:6px 0;">✉ <a href="mailto:%(email)s">%(email)s</a></p>'
+                '<p style="margin:6px 0;">☎ <a href="tel:%(phone)s">%(phone)s</a></p>'
+                '<p style="margin:6px 0;">🌐 <a href="%(website)s">%(website)s</a></p>'
+                '</div></div>') % v
+        if kind == 'split':
+            return (
+                '<div class="container" style="max-width:660px;margin:40px auto;font-family:sans-serif;">'
+                '<div class="row g-0" style="background:#fff;border-radius:16px;overflow:hidden;'
+                'box-shadow:0 10px 30px rgba(0,0,0,.1);">'
+                '<div class="col-5" style="background:#111827;color:#fff;padding:32px;text-align:center;">'
+                '<img src="%(img)s" style="width:110px;height:110px;border-radius:50%%;object-fit:cover;"/>'
+                '<h2 style="margin:16px 0 4px;font-size:1.3rem;">%(name)s</h2>'
+                '<p style="margin:0;opacity:.8;">%(title)s</p></div>'
+                '<div class="col-7" style="padding:32px;color:#374151;">'
+                '<h3 style="margin:0 0 16px;">%(company)s</h3>'
+                '<p style="margin:8px 0;">✉ <a href="mailto:%(email)s">%(email)s</a></p>'
+                '<p style="margin:8px 0;">☎ <a href="tel:%(phone)s">%(phone)s</a></p>'
+                '<p style="margin:8px 0;">🌐 <a href="%(website)s">%(website)s</a></p>'
+                '</div></div></div>') % v
+        # default: 'card'
+        return (
+            '<div style="max-width:440px;margin:40px auto;padding:32px;background:#fff;'
+            'border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.08);text-align:center;'
+            'font-family:sans-serif;color:#111827;">'
+            '<img src="%(img)s" style="width:120px;height:120px;border-radius:50%%;'
+            'object-fit:cover;margin-bottom:16px;"/>'
+            '<h1 style="margin:0;font-size:1.6rem;">%(name)s</h1>'
+            '<p style="color:#6b7280;margin:6px 0 20px;">%(title)s · %(company)s</p>'
+            '<p style="margin:8px 0;">✉ <a href="mailto:%(email)s" style="color:#111827;">%(email)s</a></p>'
+            '<p style="margin:8px 0;">☎ <a href="tel:%(phone)s" style="color:#111827;">%(phone)s</a></p>'
+            '<p style="margin:8px 0;">🌐 <a href="%(website)s" style="color:#111827;">%(website)s</a></p>'
+            '</div>') % v
+
     def _unique_slug(self, base):
         """Build a URL-safe, unique slug from a name."""
         import re
