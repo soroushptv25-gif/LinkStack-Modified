@@ -174,17 +174,20 @@
                                         string="Design from scratch" class="btn btn-link"
                                         confirm="Clear the design?"/>
                             </div>
-                            <group string="Design from an HTML file">
-                                <div class="d-flex align-items-center gap-2">
+                            <group>
+                                <group string="Design from an HTML file">
                                     <field name="html_file" filename="html_filename"
-                                           widget="binary" nolabel="1"/>
+                                           widget="binary" string="HTML file"/>
                                     <field name="html_filename" invisible="1"/>
-                                    <button name="action_load_html_file" type="object"
-                                            string="Load into design" class="btn btn-secondary"
-                                            invisible="not html_file"
-                                            confirm="Replace the current design with this file's HTML?"/>
-                                </div>
+                                </group>
                             </group>
+                            <div class="mb-3">
+                                <button name="action_load_html_file" type="object"
+                                        string="Load file into design"
+                                        class="btn btn-secondary"
+                                        invisible="not html_file"
+                                        confirm="Replace the current design with this file's HTML?"/>
+                            </div>
                             <separator string="Design content (edit or write HTML)"/>
                             <field name="source_html" widget="html" nolabel="1"
                                    options="{'resizable': true, 'height': 500}"

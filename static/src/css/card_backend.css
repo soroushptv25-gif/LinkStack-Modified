@@ -1,14 +1,12 @@
 /* Business Card backend form (scoped to .dbc_form so no other Odoo form is
    affected).
 
-   Editable fields inside groups get a visible input box. Scoping to
-   .o_inner_group deliberately leaves the big "Full Name" title alone — it sits
-   in .oe_title, outside any group, and a box around it looks wrong.
-   Read-only fields (the "Main — from Employee" column) render as plain text in
-   Odoo, so Main reads as text and Mask reads as boxes: an easy visual split. */
-.dbc_form .o_inner_group .o_field_widget input.o_input,
-.dbc_form .o_inner_group .o_field_widget textarea.o_input,
-.dbc_form .o_inner_group .o_field_widget .o_input {
+   Editable TEXT inputs inside groups get a visible box (Mask fields, Employee,
+   Owner, Card Link, etc.). Checkboxes, the file/binary widget and read-only
+   fields are deliberately left alone — read-only fields render as plain text,
+   so "Main — from Employee" reads as text and "Mask" reads as boxes. */
+.dbc_form .o_inner_group .o_field_widget input.o_input:not([type="checkbox"]):not([type="radio"]),
+.dbc_form .o_inner_group .o_field_widget textarea.o_input {
     border: 1px solid #ced4da !important;
     border-radius: 4px !important;
     padding: 4px 8px !important;
@@ -16,21 +14,11 @@
     max-width: 460px;           /* keep boxes tidy instead of full-width bars */
 }
 
-.dbc_form .o_inner_group .o_field_widget .o_input:focus {
+.dbc_form .o_inner_group .o_field_widget input.o_input:focus,
+.dbc_form .o_inner_group .o_field_widget textarea.o_input:focus {
     border-color: #714B67 !important;
     box-shadow: 0 0 0 0.15rem rgba(113, 75, 103, 0.25) !important;
     outline: none !important;
-}
-
-/* Never box the title, checkboxes or the status bar. */
-.dbc_form .oe_title .o_field_widget input.o_input,
-.dbc_form .oe_title .o_field_widget .o_input,
-.dbc_form .o_inner_group .o_field_boolean input,
-.dbc_form .o_statusbar_status .o_input {
-    border: 0 !important;
-    box-shadow: none !important;
-    background-color: transparent !important;
-    max-width: none !important;
 }
 
 /* Compact "Position · Company" subtitle under the name. */
