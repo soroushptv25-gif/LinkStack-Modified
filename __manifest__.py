@@ -26,7 +26,7 @@ up to any button, route or cron yet.
 """,
     'author': 'Soroush',
     'website': 'https://github.com/',
-    'depends': ['base', 'web', 'hr', 'web_editor', 'mass_mailing'],
+    'depends': ['base', 'web', 'hr', 'web_editor'],
     'data': [
         'security/ir.model.access.csv',
         'security/business_card_rules.xml',

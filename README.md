@@ -119,13 +119,10 @@ install.
 - **`qr_code`** is computed from `public_url`, so it always matches the link. It
   is shown on the **card record in Odoo** (the public page itself is kept clean —
   scanning a QR just reopens the same page).
-- **`source_html`** — the **Design** tab: build the public page with the Odoo
-  **drag-drop block builder** (reused from Email Marketing / `mass_mailing`) —
-  a template gallery + a sidebar of blocks (headers, image+text, columns, big
-  boxes, buttons). Or start from a personalised **preset** (Card / Banner /
-  Split). When set, the design replaces the built-in card layout/theme.
-  Stored raw so it stays re-editable, and **sanitized on render** (scripts
-  stripped) before it reaches the public page.
+- **`source_html`** — the **Design** tab: edit the public page with Odoo's visual
+  HTML editor (toolbar + `/` block menu — headings, images, tables, columns…).
+  When set, it replaces the built-in card layout (and theme) on the public page.
+  Sanitized on save (scripts stripped).
 - The public page (`/card/<token>`) is **public** (no login) and standalone —
   visitors never reach the Odoo backend from it. It is read with `sudo()`.
 
@@ -291,10 +288,10 @@ it again (the same token is reused) to bring it back.
 
 **Can I change the public page design?** Two ways: (1) pick a **Public Page
 Design** (Classic / Dark / Minimal) on the card, or set the default in
-**Configuration → Settings**; (2) the **Design** tab — a visual **drag-drop block builder** (the Email-
-Marketing editor): pick a template or a personalised **preset** (Card / Banner /
-Split), then drag in blocks (headers, image+text, columns, buttons). Content
-there replaces the built-in layout; it is sanitized on render for public safety. *(Note: images added in the editor may need to be marked public
+**Configuration → Settings**; (2) the **Design** tab — start from a **preset** (Card / Banner / Split,
+personalised with the card's data) or design your own, edited live with Odoo's
+visual editor (toolbar + `/` block menu). Content there replaces the built-in
+layout. *(Note: images added in the editor may need to be marked public
 to show for anonymous visitors.)*
 
 **Where is the QR shown?** On the card record inside Odoo. It's deliberately not

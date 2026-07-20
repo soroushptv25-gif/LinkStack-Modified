@@ -90,15 +90,15 @@ class DigitalBusinessCard(models.Model):
     contact_website = fields.Char(string='Shown Website', compute='_compute_contact')
     contact_image = fields.Binary(string='Shown Photo', compute='_compute_contact')
 
-    # The custom public-page design, edited with the mass_mailing drag-drop
-    # block builder. Stored RAW (sanitize=False) so the builder's snippet
-    # metadata survives and stays re-editable — public safety is enforced by
-    # SANITIZING ON RENDER in the controller (see controllers/main.py), never
-    # by trusting this field. source_html_inline holds the CSS-inlined version
-    # the builder produces (that's what the public page renders).
-    source_html = fields.Html(string='Public Page Design', sanitize=False)
-    source_html_inline = fields.Html(
-        string='Public Page Design (inlined)', sanitize=False, copy=False)
+    # Optional HTML body. When present, the public page renders this instead
+    # of the built-in layout. It can come from UNTRUSTED external sources, so
+    # it is sanitized on write (scripts, on* handlers and javascript: URLs are
+    # stripped) while inline styles/classes are kept for layout. Never set
+    # sanitize=False here — this field is shown on a public, unauthenticated
+    # page and raw HTML would be a stored-XSS hole.
+    source_html = fields.Html(
+        string='Custom HTML', sanitize=True, sanitize_attributes=True,
+        strip_style=False, strip_classes=False)
 
     # Permanent public link + the QR code that points at it. Each card has its
     # own unique link/QR — share it, print the QR, or write the URL to an NFC
