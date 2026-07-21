@@ -180,6 +180,7 @@
                             <group>
                                 <group string="Preset style (applies to the design above)">
                                     <field name="design_accent"/>
+                                    <field name="design_bg"/>
                                     <field name="design_width"/>
                                     <field name="design_preset" invisible="1"/>
                                     <div colspan="2" class="text-muted"

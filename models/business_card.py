@@ -116,6 +116,10 @@ class DigitalBusinessCard(models.Model):
     design_width = fields.Selection(
         [('narrow', 'Narrow'), ('normal', 'Normal'), ('wide', 'Wide')],
         string='Card Width', default='normal')
+    design_bg = fields.Selection(
+        [('white', 'White'), ('light', 'Light Gray'), ('cream', 'Cream'),
+         ('slate', 'Slate'), ('ink', 'Ink (dark)')],
+        string='Background Color', default='white')
 
     # Permanent public link + the QR code that points at it. Each card has its
     # own unique link/QR — share it, print the QR, or write the URL to an NFC
@@ -349,6 +353,16 @@ class DigitalBusinessCard(models.Model):
         'amber': ('#d97706', '#f59e0b'),
     }
     _WIDTH_PX = {'narrow': 380, 'normal': 440, 'wide': 560}
+    # Body ("white part") background -> (bg, text, contact-pill bg, link colour).
+    # link=None means "use the accent colour"; a value overrides it for contrast
+    # on dark backgrounds.
+    _BG = {
+        'white': ('#ffffff', '#374151', '#f5f5ff', None),
+        'light': ('#f3f4f6', '#374151', '#ffffff', None),
+        'cream': ('#fdf6ec', '#4b3f2f', '#fff8ee', None),
+        'slate': ('#1e293b', '#e5e7eb', '#334155', '#ffffff'),
+        'ink': ('#0f172a', '#cbd5e1', '#1e293b', '#ffffff'),
+    }
 
     def _apply_preset(self, kind):
         for card in self:
@@ -374,7 +388,7 @@ class DigitalBusinessCard(models.Model):
             card.source_html = False
         return True
 
-    @api.onchange('design_accent', 'design_width')
+    @api.onchange('design_accent', 'design_width', 'design_bg')
     def _onchange_design_style(self):
         # Live recolour/resize: regenerate the preset design when the accent or
         # width changes — but only for preset-based designs, so a custom or
@@ -412,6 +426,8 @@ class DigitalBusinessCard(models.Model):
             website = 'https://' + website
         solid, grad = self._ACCENT_HEX.get(self.design_accent or 'indigo',
                                            self._ACCENT_HEX['indigo'])
+        bg, text, pill, link = self._BG.get(self.design_bg or 'white',
+                                            self._BG['white'])
         return {
             'img': '/web/image/digital.business.card/%s/contact_image' % (self.id or 0),
             'name': escape(self.name or self.main_name or 'Your Name'),
@@ -422,6 +438,7 @@ class DigitalBusinessCard(models.Model):
             'website': escape(website),
             'solid': solid, 'grad': grad,
             'w': self._WIDTH_PX.get(self.design_width or 'normal', 440),
+            'bg': bg, 'text': text, 'pill': pill, 'link': link or solid,
         }
 
     def _preset_html(self, kind):
@@ -437,32 +454,32 @@ class DigitalBusinessCard(models.Model):
                 'object-fit:cover;border:4px solid rgba(255,255,255,.4);"/>'
                 '<h1 style="margin:14px 0 4px;">%(name)s</h1>'
                 '<p style="margin:0;opacity:.9;">%(title)s</p></div>'
-                '<div style="padding:24px;background:#fff;text-align:center;color:#374151;">'
+                '<div style="padding:24px;background:%(bg)s;text-align:center;color:%(text)s;">'
                 '<p style="font-weight:600;margin:0 0 12px;">%(company)s</p>'
-                '<p style="margin:6px 0;">✉ <a href="mailto:%(email)s" style="color:%(solid)s;">%(email)s</a></p>'
-                '<p style="margin:6px 0;">☎ <a href="tel:%(phone)s" style="color:%(solid)s;">%(phone)s</a></p>'
-                '<p style="margin:6px 0;">🌐 <a href="%(website)s" style="color:%(solid)s;">%(website)s</a></p>'
+                '<p style="margin:6px 0;">✉ <a href="mailto:%(email)s" style="color:%(link)s;">%(email)s</a></p>'
+                '<p style="margin:6px 0;">☎ <a href="tel:%(phone)s" style="color:%(link)s;">%(phone)s</a></p>'
+                '<p style="margin:6px 0;">🌐 <a href="%(website)s" style="color:%(link)s;">%(website)s</a></p>'
                 '</div></div>') % v
         if kind == 'split':
             return (
                 '<div class="container" style="max-width:%(w)spx;margin:40px auto;font-family:sans-serif;">'
-                '<div class="row g-0" style="background:#fff;border-radius:16px;overflow:hidden;'
+                '<div class="row g-0" style="background:%(bg)s;border-radius:16px;overflow:hidden;'
                 'box-shadow:0 10px 30px rgba(0,0,0,.1);">'
                 '<div class="col-5" style="background:%(solid)s;color:#fff;padding:32px;text-align:center;">'
                 '<img src="%(img)s" style="width:110px;height:110px;border-radius:50%%;object-fit:cover;"/>'
                 '<h2 style="margin:16px 0 4px;font-size:1.3rem;">%(name)s</h2>'
                 '<p style="margin:0;opacity:.8;">%(title)s</p></div>'
-                '<div class="col-7" style="padding:32px;color:#374151;">'
+                '<div class="col-7" style="padding:32px;color:%(text)s;">'
                 '<h3 style="margin:0 0 16px;">%(company)s</h3>'
-                '<p style="margin:8px 0;">✉ <a href="mailto:%(email)s" style="color:%(solid)s;">%(email)s</a></p>'
-                '<p style="margin:8px 0;">☎ <a href="tel:%(phone)s" style="color:%(solid)s;">%(phone)s</a></p>'
-                '<p style="margin:8px 0;">🌐 <a href="%(website)s" style="color:%(solid)s;">%(website)s</a></p>'
+                '<p style="margin:8px 0;">✉ <a href="mailto:%(email)s" style="color:%(link)s;">%(email)s</a></p>'
+                '<p style="margin:8px 0;">☎ <a href="tel:%(phone)s" style="color:%(link)s;">%(phone)s</a></p>'
+                '<p style="margin:8px 0;">🌐 <a href="%(website)s" style="color:%(link)s;">%(website)s</a></p>'
                 '</div></div></div>') % v
         if kind == 'modern':
             return (
                 '<div style="max-width:%(w)spx;margin:40px auto;font-family:-apple-system,'
                 '\'Segoe UI\',Roboto,Arial,sans-serif;border-radius:20px;overflow:hidden;'
-                'box-shadow:0 20px 55px rgba(0,0,0,.16);background:#fff;">'
+                'box-shadow:0 20px 55px rgba(0,0,0,.16);background:%(bg)s;">'
                 '<div style="background:linear-gradient(135deg,%(grad)s 0%%,%(solid)s 100%%);'
                 'padding:42px 24px 58px;text-align:center;">'
                 '<img src="%(img)s" style="width:112px;height:112px;border-radius:50%%;'
@@ -470,32 +487,32 @@ class DigitalBusinessCard(models.Model):
                 'box-shadow:0 8px 22px rgba(0,0,0,.22);"/>'
                 '<h1 style="color:#fff;margin:16px 0 4px;font-size:1.7rem;">%(name)s</h1>'
                 '<p style="color:rgba(255,255,255,.88);margin:0;">%(title)s</p></div>'
-                '<div style="padding:26px 24px 12px;margin-top:-22px;background:#fff;'
-                'border-radius:22px 22px 0 0;">'
+                '<div style="padding:26px 24px 12px;margin-top:-22px;background:%(bg)s;'
+                'border-radius:22px 22px 0 0;color:%(text)s;">'
                 '<a href="mailto:%(email)s" style="display:block;padding:14px 18px;margin:10px 0;'
-                'border-radius:12px;background:#f5f5ff;color:%(solid)s;text-decoration:none;'
+                'border-radius:12px;background:%(pill)s;color:%(link)s;text-decoration:none;'
                 'font-weight:500;">✉ %(email)s</a>'
                 '<a href="tel:%(phone)s" style="display:block;padding:14px 18px;margin:10px 0;'
-                'border-radius:12px;background:#f5f5ff;color:%(solid)s;text-decoration:none;'
+                'border-radius:12px;background:%(pill)s;color:%(link)s;text-decoration:none;'
                 'font-weight:500;">☎ %(phone)s</a>'
                 '<a href="%(website)s" style="display:block;padding:14px 18px;margin:10px 0;'
-                'border-radius:12px;background:#f5f5ff;color:%(solid)s;text-decoration:none;'
+                'border-radius:12px;background:%(pill)s;color:%(link)s;text-decoration:none;'
                 'font-weight:500;">🌐 %(website)s</a></div>'
                 '<div style="background:#0f172a;padding:16px;text-align:center;">'
                 '<p style="color:#94a3b8;margin:0;font-size:.85rem;">%(company)s</p></div>'
                 '</div>') % v
         # default: 'card'
         return (
-            '<div style="max-width:%(w)spx;margin:40px auto;padding:32px;background:#fff;'
+            '<div style="max-width:%(w)spx;margin:40px auto;padding:32px;background:%(bg)s;'
             'border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.08);text-align:center;'
-            'font-family:sans-serif;color:#111827;border-top:5px solid %(solid)s;">'
+            'font-family:sans-serif;color:%(text)s;border-top:5px solid %(solid)s;">'
             '<img src="%(img)s" style="width:120px;height:120px;border-radius:50%%;'
             'object-fit:cover;margin-bottom:16px;border:3px solid %(solid)s;"/>'
             '<h1 style="margin:0;font-size:1.6rem;">%(name)s</h1>'
-            '<p style="color:#6b7280;margin:6px 0 20px;">%(title)s · %(company)s</p>'
-            '<p style="margin:8px 0;">✉ <a href="mailto:%(email)s" style="color:%(solid)s;">%(email)s</a></p>'
-            '<p style="margin:8px 0;">☎ <a href="tel:%(phone)s" style="color:%(solid)s;">%(phone)s</a></p>'
-            '<p style="margin:8px 0;">🌐 <a href="%(website)s" style="color:%(solid)s;">%(website)s</a></p>'
+            '<p style="margin:6px 0 20px;opacity:.75;">%(title)s · %(company)s</p>'
+            '<p style="margin:8px 0;">✉ <a href="mailto:%(email)s" style="color:%(link)s;">%(email)s</a></p>'
+            '<p style="margin:8px 0;">☎ <a href="tel:%(phone)s" style="color:%(link)s;">%(phone)s</a></p>'
+            '<p style="margin:8px 0;">🌐 <a href="%(website)s" style="color:%(link)s;">%(website)s</a></p>'
             '</div>') % v
 
     def _unique_slug(self, base):
