@@ -120,8 +120,9 @@ install.
   is shown on the **card record in Odoo** (the public page itself is kept clean —
   scanning a QR just reopens the same page).
 - **`source_html`** — the **Design** tab: design the public page three ways —
-  start from a **preset**, **upload an HTML file** ("Load into design"), or
-  write/edit it in the visual editor (toolbar + `/` block menu). When set, it
+  start from a **preset** (Card / Banner / Split / Modern) and restyle it with the
+  **Accent color** and **Card width** controls (they regenerate the preset
+  design live), **upload an HTML file**, or write/edit it in the visual editor (toolbar + `/` block menu). When set, it
   replaces the built-in card layout (and theme). Sanitized on save: **inline
   styles are kept; `<script>` and `<style>` blocks are stripped** — so use
   **inline styles** in HTML files.

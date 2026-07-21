@@ -160,7 +160,7 @@
                                 write/edit it below (toolbar + <b>/</b> menu). Whatever is
                                 here <b>replaces</b> the built-in card layout and theme.
                             </div>
-                            <div class="mb-3">
+                            <div class="mb-2">
                                 <button name="action_preset_card" type="object"
                                         string="Preset: Card" class="btn btn-secondary me-1"
                                         confirm="Load the Card preset? This replaces the current design."/>
@@ -170,10 +170,25 @@
                                 <button name="action_preset_split" type="object"
                                         string="Preset: Split" class="btn btn-secondary me-1"
                                         confirm="Load the Split preset? This replaces the current design."/>
+                                <button name="action_preset_modern" type="object"
+                                        string="Preset: Modern" class="btn btn-secondary me-1"
+                                        confirm="Load the Modern preset? This replaces the current design."/>
                                 <button name="action_preset_clear" type="object"
                                         string="Design from scratch" class="btn btn-link"
                                         confirm="Clear the design?"/>
                             </div>
+                            <group>
+                                <group string="Preset style (applies to the design above)">
+                                    <field name="design_accent"/>
+                                    <field name="design_width"/>
+                                    <field name="design_preset" invisible="1"/>
+                                    <div colspan="2" class="text-muted"
+                                         invisible="design_preset">
+                                        <i class="fa fa-info-circle me-1"/>Pick a preset first;
+                                        then changing the accent color or width restyles it live.
+                                    </div>
+                                </group>
+                            </group>
                             <group>
                                 <group string="Design from an HTML file">
                                     <field name="html_file" filename="html_filename"
