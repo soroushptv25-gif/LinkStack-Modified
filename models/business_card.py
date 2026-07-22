@@ -65,7 +65,6 @@ class DigitalBusinessCard(models.Model):
     main_phone = fields.Char(string='Phone (employee)', compute='_compute_main')
     main_website = fields.Char(string='Website (employee)', compute='_compute_main')
     main_photo = fields.Binary(string='Photo (employee)', compute='_compute_main')
-    main_logo = fields.Binary(string='Company Logo (employee)', compute='_compute_main')
 
     # --- MASK fields: the user's own values. Editable, empty by default, never
     # auto-filled. When a mask is set it OVERRIDES the employee value on the
@@ -76,7 +75,9 @@ class DigitalBusinessCard(models.Model):
     mask_phone = fields.Char(string='Phone (mask)')
     mask_website = fields.Char(string='Website (mask)')
     mask_photo = fields.Binary(string='Photo (mask)', attachment=True)
-    mask_logo = fields.Binary(string='Company Logo (mask)', attachment=True)
+    # The company logo shown on the card. There is no employee/company source
+    # for it — it comes ONLY from this per-card upload (blank = no logo shown).
+    mask_logo = fields.Binary(string='Company Logo', attachment=True)
 
     # What actually gets shown on the card = mask if set, else the employee
     # (main) value. Computed (not stored). For name, the record's own `name`
@@ -162,7 +163,13 @@ class DigitalBusinessCard(models.Model):
         # The link only exists while the card is PUBLISHED, and it uses the
         # unguessable access token (a hash), never the readable slug.
         # Deactivating (or reverting to draft) blanks the link and QR — 404.
-        base = self.env['ir.config_parameter'].sudo().get_param('web.base.url') or ''
+        #
+        # Base address: the module's own 'Publishing Address' setting takes
+        # priority (lets cards live under a custom domain / reverse proxy),
+        # falling back to Odoo's global web.base.url when it is left empty.
+        icp = self.env['ir.config_parameter'].sudo()
+        base = (icp.get_param('digital_business_card.public_base_url')
+                or icp.get_param('web.base.url') or '').rstrip('/')
         for card in self:
             live = card.access_token and card.state == 'published'
             card.public_url = '%s/card/%s' % (base, card.access_token) if live else False
@@ -172,7 +179,7 @@ class DigitalBusinessCard(models.Model):
                  'employee_id.company_id', 'employee_id.work_email',
                  'employee_id.private_email',
                  'employee_id.work_phone', 'employee_id.mobile_phone',
-                 'employee_id.image_1920', 'employee_id.company_id.logo')
+                 'employee_id.image_1920')
     def _compute_main(self):
         # MAIN = the linked employee's live values (read-only). These update
         # automatically whenever the employee record changes.
@@ -188,7 +195,7 @@ class DigitalBusinessCard(models.Model):
             if not emp:
                 card.main_name = card.main_job_title = card.main_company = False
                 card.main_email = card.main_phone = card.main_website = False
-                card.main_photo = card.main_logo = False
+                card.main_photo = False
                 continue
             chosen = emp[email_field] if email_field in emp._fields else False
             card.main_name = emp.name or False
@@ -198,11 +205,10 @@ class DigitalBusinessCard(models.Model):
             card.main_phone = emp.work_phone or emp.mobile_phone or False
             card.main_website = emp.company_id.website or False
             card.main_photo = emp.image_1920 or False
-            card.main_logo = emp.company_id.logo or False
 
     @api.depends('slug', 'name',
                  'main_name', 'main_job_title', 'main_company', 'main_email',
-                 'main_phone', 'main_website', 'main_photo', 'main_logo',
+                 'main_phone', 'main_website', 'main_photo',
                  'mask_job_title', 'mask_company', 'mask_email', 'mask_phone',
                  'mask_website', 'mask_photo', 'mask_logo')
     def _compute_contact(self):
@@ -224,7 +230,7 @@ class DigitalBusinessCard(models.Model):
             card.contact_phone = card.mask_phone or card.main_phone
             card.contact_website = card.mask_website or card.main_website
             card.contact_image = card.mask_photo or card.main_photo
-            card.contact_logo = card.mask_logo or card.main_logo
+            card.contact_logo = card.mask_logo
 
     # Make the shown values searchable: match the mask value OR the employee's.
     def _search_contact_name(self, operator, value):
@@ -434,7 +440,7 @@ class DigitalBusinessCard(models.Model):
         bg, text, pill, link = self._BG.get(self.design_bg or 'white',
                                             self._BG['white'])
         logo = ''
-        if self.mask_logo or self.main_logo:
+        if self.mask_logo:
             logo = ('<img src="/web/image/digital.business.card/%s/contact_logo" '
                     'style="max-height:44px;max-width:60%%;object-fit:contain;'
                     'display:block;margin:0 auto 14px;"/>' % (self.id or 0))

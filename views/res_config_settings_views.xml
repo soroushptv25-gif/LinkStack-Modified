@@ -20,6 +20,23 @@
                             <field name="dbc_default_template"/>
                         </setting>
                     </block>
+                    <block title="Publishing" name="dbc_publishing_block">
+                        <setting string="Publishing Address"
+                                 help="Base web address used in every published card's link and QR code (e.g. https://cards.example.com). Leave empty to use Odoo's own base URL.">
+                            <field name="dbc_public_base_url" placeholder="https://cards.example.com"/>
+                        </setting>
+                        <setting string="Publish Targets"
+                                 help="External web hosts that generated cards are sent to (POST/PUT).">
+                            <div class="text-muted">
+                                <field name="dbc_target_count" class="oe_inline"/> target(s) configured
+                            </div>
+                            <div class="mt8">
+                                <button name="action_open_dbc_targets" type="object"
+                                        string="Manage Publish Targets"
+                                        icon="fa-arrow-right" class="btn-link"/>
+                            </div>
+                        </setting>
+                    </block>
                 </app>
             </xpath>
         </field>

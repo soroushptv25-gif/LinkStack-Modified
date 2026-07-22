@@ -41,7 +41,7 @@ back off (the page 404s). Cards can use different **public-page designs**.
 | A card **linked to an HR employee** — details pulled live, editable per card | the card's **Employee** field |
 | Permanent public card page + QR + vCard at an **unguessable hash URL** | `http://<your-odoo>/card/<token>` |
 | **Public-page designs** (Classic / Dark / Minimal), per card or a default | card **Public Page Design** / **Settings** |
-| **Settings** (email source, default design) | **Business Cards → Configuration → Settings** *(admin)* |
+| **Settings** (email source, default design, publishing address, targets) | **Business Cards → Configuration → Settings** *(admin)* |
 | Publish selected cards to a 3rd-party host | **Cards → Actions ▾ → Publish to Web** |
 | Define where to publish | **Business Cards → Publish Targets** *(admin)* |
 
@@ -115,7 +115,8 @@ install.
   placeholder**; the `slug` (and therefore the link/QR) is empty until you
   **generate** it.
 - **`generated`** is `True` once a slug exists.
-- **`public_url`** = `web.base.url` + `/card/<token>` (empty until published).
+- **`public_url`** = the **Publishing Address** setting (or `web.base.url` when
+  it is empty) + `/card/<token>` (empty until published).
 - **`qr_code`** is computed from `public_url`, so it always matches the link. It
   is shown on the **card record in Odoo** (the public page itself is kept clean —
   scanning a QR just reopens the same page).
@@ -123,7 +124,7 @@ install.
   start from a **preset** (Card / Banner / Split / Modern) and restyle it with the
   **Accent color**, **Background color** and **Card width** controls (they
   regenerate the preset design live; text/link contrast auto-adjusts, and the
-  **company logo** — when present — is placed at the top automatically), **upload an HTML file**, or write/edit it in the visual editor (toolbar + `/` block menu). When set, it
+  card's **logo** — when uploaded — is placed at the top automatically), **upload an HTML file**, or write/edit it in the visual editor (toolbar + `/` block menu). When set, it
   replaces the built-in card layout (and theme). Sanitized on save: **inline
   styles are kept; `<script>` and `<style>` blocks are stripped** — so use
   **inline styles** in HTML files.
@@ -173,12 +174,10 @@ When a card is linked to an employee, the shown values come from the employee:
 | Email | `work_email` by default — **configurable** (see below) |
 | Phone | `work_phone` (falls back to `mobile_phone`) |
 | Photo | `image_1920` |
-| Company logo | `company_id.logo` |
 | Website | the employee's company website |
 
 **Main vs Mask (per-field override):** the card form's **Profile** tab has two
-sections, side by side, for position, company, email, phone, website, photo and
-company logo:
+sections, side by side, for position, company, email, phone, website and photo:
 
 - **Main — from Employee:** read-only, pulled **live** from the linked employee.
   It updates automatically whenever the employee record changes.
@@ -190,6 +189,12 @@ if the employee's data changes, a card with a mask set keeps showing the mask
 (clear the mask to follow the employee again). The **Shown on the card** tab
 previews the resulting values. (Name uses the card's own **Full Name** as its
 mask, falling back to the employee's name.)
+
+**Company logo:** a card can show a logo above the name. Unlike the fields
+above, it has **no employee/company source** — it comes only from the
+**Company Logo** upload on the Profile tab (blank = no logo shown). Once
+uploaded it appears on the built-in public page and is auto-placed at the top
+of every design preset.
 
 ### Choosing which employee email the card shows
 
@@ -211,6 +216,15 @@ back to `work_email` (or delete the parameter).
 
 > This instance is configured to use **`private_email`**.
 
+### Publishing address (base URL)
+
+Every published card's link and QR code are built from a **base web address**.
+By default this is Odoo's own `web.base.url`. To serve cards under a **custom
+domain or reverse proxy** (e.g. `https://cards.example.com`), set the
+**Publishing Address** in **Business Cards → Configuration → Settings** *(admin)*.
+Leave it empty to keep using Odoo's base URL. Changing it updates the link and
+QR of every card — no per-card edits needed.
+
 ---
 
 ## Publishing to a 3rd-party host
@@ -218,7 +232,9 @@ back to `work_email` (or delete the parameter).
 Your cards live inside Odoo at `/card/<token>`. Publishing lets you *also* push
 selected cards to an **external website/API** that stores and serves them.
 
-1. **Business Cards → Publish Targets → New** *(admin)* — define a destination:
+1. **Business Cards → Publish Targets → New** *(admin)* — define a destination
+   (also reachable via **Configuration → Settings → Publishing → Manage Publish
+   Targets**):
 
    | Field | Meaning |
    |---|---|
