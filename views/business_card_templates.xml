@@ -23,6 +23,9 @@
                 </t>
                 <t t-else="">
                     <div class="dbc-card">
+                        <img t-if="card.contact_logo" class="dbc-logo"
+                             t-attf-src="/web/image/digital.business.card/#{card.id}/contact_logo"
+                             alt="Company logo"/>
                         <img t-if="card.contact_image" class="dbc-photo"
                              t-attf-src="/web/image/digital.business.card/#{card.id}/contact_image"/>
                         <h1 class="dbc-name" t-out="card.contact_name"/>

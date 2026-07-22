@@ -122,7 +122,8 @@ install.
 - **`source_html`** — the **Design** tab: design the public page three ways —
   start from a **preset** (Card / Banner / Split / Modern) and restyle it with the
   **Accent color**, **Background color** and **Card width** controls (they
-  regenerate the preset design live; text/link contrast auto-adjusts), **upload an HTML file**, or write/edit it in the visual editor (toolbar + `/` block menu). When set, it
+  regenerate the preset design live; text/link contrast auto-adjusts, and the
+  **company logo** — when present — is placed at the top automatically), **upload an HTML file**, or write/edit it in the visual editor (toolbar + `/` block menu). When set, it
   replaces the built-in card layout (and theme). Sanitized on save: **inline
   styles are kept; `<script>` and `<style>` blocks are stripped** — so use
   **inline styles** in HTML files.
@@ -172,10 +173,12 @@ When a card is linked to an employee, the shown values come from the employee:
 | Email | `work_email` by default — **configurable** (see below) |
 | Phone | `work_phone` (falls back to `mobile_phone`) |
 | Photo | `image_1920` |
+| Company logo | `company_id.logo` |
 | Website | the employee's company website |
 
 **Main vs Mask (per-field override):** the card form's **Profile** tab has two
-sections, side by side, for position, company, email, phone, website and photo:
+sections, side by side, for position, company, email, phone, website, photo and
+company logo:
 
 - **Main — from Employee:** read-only, pulled **live** from the linked employee.
   It updates automatically whenever the employee record changes.

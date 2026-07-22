@@ -65,6 +65,7 @@ class DigitalBusinessCard(models.Model):
     main_phone = fields.Char(string='Phone (employee)', compute='_compute_main')
     main_website = fields.Char(string='Website (employee)', compute='_compute_main')
     main_photo = fields.Binary(string='Photo (employee)', compute='_compute_main')
+    main_logo = fields.Binary(string='Company Logo (employee)', compute='_compute_main')
 
     # --- MASK fields: the user's own values. Editable, empty by default, never
     # auto-filled. When a mask is set it OVERRIDES the employee value on the
@@ -75,6 +76,7 @@ class DigitalBusinessCard(models.Model):
     mask_phone = fields.Char(string='Phone (mask)')
     mask_website = fields.Char(string='Website (mask)')
     mask_photo = fields.Binary(string='Photo (mask)', attachment=True)
+    mask_logo = fields.Binary(string='Company Logo (mask)', attachment=True)
 
     # What actually gets shown on the card = mask if set, else the employee
     # (main) value. Computed (not stored). For name, the record's own `name`
@@ -89,6 +91,7 @@ class DigitalBusinessCard(models.Model):
     contact_phone = fields.Char(string='Shown Phone', compute='_compute_contact')
     contact_website = fields.Char(string='Shown Website', compute='_compute_contact')
     contact_image = fields.Binary(string='Shown Photo', compute='_compute_contact')
+    contact_logo = fields.Binary(string='Shown Logo', compute='_compute_contact')
 
     # Optional HTML body. When present, the public page renders this instead
     # of the built-in layout. It can come from UNTRUSTED external sources, so
@@ -169,7 +172,7 @@ class DigitalBusinessCard(models.Model):
                  'employee_id.company_id', 'employee_id.work_email',
                  'employee_id.private_email',
                  'employee_id.work_phone', 'employee_id.mobile_phone',
-                 'employee_id.image_1920')
+                 'employee_id.image_1920', 'employee_id.company_id.logo')
     def _compute_main(self):
         # MAIN = the linked employee's live values (read-only). These update
         # automatically whenever the employee record changes.
@@ -185,7 +188,7 @@ class DigitalBusinessCard(models.Model):
             if not emp:
                 card.main_name = card.main_job_title = card.main_company = False
                 card.main_email = card.main_phone = card.main_website = False
-                card.main_photo = False
+                card.main_photo = card.main_logo = False
                 continue
             chosen = emp[email_field] if email_field in emp._fields else False
             card.main_name = emp.name or False
@@ -195,12 +198,13 @@ class DigitalBusinessCard(models.Model):
             card.main_phone = emp.work_phone or emp.mobile_phone or False
             card.main_website = emp.company_id.website or False
             card.main_photo = emp.image_1920 or False
+            card.main_logo = emp.company_id.logo or False
 
     @api.depends('slug', 'name',
                  'main_name', 'main_job_title', 'main_company', 'main_email',
-                 'main_phone', 'main_website', 'main_photo',
+                 'main_phone', 'main_website', 'main_photo', 'main_logo',
                  'mask_job_title', 'mask_company', 'mask_email', 'mask_phone',
-                 'mask_website', 'mask_photo')
+                 'mask_website', 'mask_photo', 'mask_logo')
     def _compute_contact(self):
         # Shown value = MASK if set, otherwise MAIN (employee). The mask always
         # wins; only when it is empty do we fall back to the employee value.
@@ -212,7 +216,7 @@ class DigitalBusinessCard(models.Model):
             if not card.slug:
                 card.contact_job_title = card.contact_company = False
                 card.contact_email = card.contact_phone = False
-                card.contact_website = card.contact_image = False
+                card.contact_website = card.contact_image = card.contact_logo = False
                 continue
             card.contact_job_title = card.mask_job_title or card.main_job_title
             card.contact_company = card.mask_company or card.main_company
@@ -220,6 +224,7 @@ class DigitalBusinessCard(models.Model):
             card.contact_phone = card.mask_phone or card.main_phone
             card.contact_website = card.mask_website or card.main_website
             card.contact_image = card.mask_photo or card.main_photo
+            card.contact_logo = card.mask_logo or card.main_logo
 
     # Make the shown values searchable: match the mask value OR the employee's.
     def _search_contact_name(self, operator, value):
@@ -428,6 +433,11 @@ class DigitalBusinessCard(models.Model):
                                            self._ACCENT_HEX['indigo'])
         bg, text, pill, link = self._BG.get(self.design_bg or 'white',
                                             self._BG['white'])
+        logo = ''
+        if self.mask_logo or self.main_logo:
+            logo = ('<img src="/web/image/digital.business.card/%s/contact_logo" '
+                    'style="max-height:44px;max-width:60%%;object-fit:contain;'
+                    'display:block;margin:0 auto 14px;"/>' % (self.id or 0))
         return {
             'img': '/web/image/digital.business.card/%s/contact_image' % (self.id or 0),
             'name': escape(self.name or self.main_name or 'Your Name'),
@@ -439,6 +449,7 @@ class DigitalBusinessCard(models.Model):
             'solid': solid, 'grad': grad,
             'w': self._WIDTH_PX.get(self.design_width or 'normal', 440),
             'bg': bg, 'text': text, 'pill': pill, 'link': link or solid,
+            'logo': logo,
         }
 
     def _preset_html(self, kind):
@@ -455,6 +466,7 @@ class DigitalBusinessCard(models.Model):
                 '<h1 style="margin:14px 0 4px;">%(name)s</h1>'
                 '<p style="margin:0;opacity:.9;">%(title)s</p></div>'
                 '<div style="padding:24px;background:%(bg)s;text-align:center;color:%(text)s;">'
+                '%(logo)s'
                 '<p style="font-weight:600;margin:0 0 12px;">%(company)s</p>'
                 '<p style="margin:6px 0;">✉ <a href="mailto:%(email)s" style="color:%(link)s;">%(email)s</a></p>'
                 '<p style="margin:6px 0;">☎ <a href="tel:%(phone)s" style="color:%(link)s;">%(phone)s</a></p>'
@@ -470,6 +482,7 @@ class DigitalBusinessCard(models.Model):
                 '<h2 style="margin:16px 0 4px;font-size:1.3rem;">%(name)s</h2>'
                 '<p style="margin:0;opacity:.8;">%(title)s</p></div>'
                 '<div class="col-7" style="padding:32px;color:%(text)s;">'
+                '%(logo)s'
                 '<h3 style="margin:0 0 16px;">%(company)s</h3>'
                 '<p style="margin:8px 0;">✉ <a href="mailto:%(email)s" style="color:%(link)s;">%(email)s</a></p>'
                 '<p style="margin:8px 0;">☎ <a href="tel:%(phone)s" style="color:%(link)s;">%(phone)s</a></p>'
@@ -489,6 +502,7 @@ class DigitalBusinessCard(models.Model):
                 '<p style="color:rgba(255,255,255,.88);margin:0;">%(title)s</p></div>'
                 '<div style="padding:26px 24px 12px;margin-top:-22px;background:%(bg)s;'
                 'border-radius:22px 22px 0 0;color:%(text)s;">'
+                '%(logo)s'
                 '<a href="mailto:%(email)s" style="display:block;padding:14px 18px;margin:10px 0;'
                 'border-radius:12px;background:%(pill)s;color:%(link)s;text-decoration:none;'
                 'font-weight:500;">✉ %(email)s</a>'
@@ -506,6 +520,7 @@ class DigitalBusinessCard(models.Model):
             '<div style="max-width:%(w)spx;margin:40px auto;padding:32px;background:%(bg)s;'
             'border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.08);text-align:center;'
             'font-family:sans-serif;color:%(text)s;border-top:5px solid %(solid)s;">'
+            '%(logo)s'
             '<img src="%(img)s" style="width:120px;height:120px;border-radius:50%%;'
             'object-fit:cover;margin-bottom:16px;border:3px solid %(solid)s;"/>'
             '<h1 style="margin:0;font-size:1.6rem;">%(name)s</h1>'
